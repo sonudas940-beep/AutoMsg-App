@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite AutoMsg - Dashboard</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f0f9ff; 
+            margin: 0; 
+            padding: 0; 
+            display: flex;
+            min-height: 100vh;
+            color: #334155;
+            overflow-x: hidden;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: #0284c7; 
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding-top: 10px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: width 0.3s ease;
+            z-index: 100;
+            overflow-y: auto;
+            overflow-x: hidden;
+            white-space: nowrap; 
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+
+        .sidebar.collapsed { width: 70px; }
+        
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 15px; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+            height: 60px;
+        }
+        .sidebar.collapsed .sidebar-header { justify-content: center; padding: 15px 0; }
+        .brand-container { display: flex; align-items: center; gap: 8px; }
+        @keyframes pulseWp { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        .brand-logo-anim { width: 24px; height: 24px; fill: #ffffff; animation: pulseWp 2s infinite ease-in-out; min-width: 24px; }
+        .brand-text { font-size: 18px; font-weight: bold; color: #ffffff; transition: opacity 0.3s; }
+        .sidebar.collapsed .brand-container { display: none; }
+        .hamburger-inner { font-size: 24px; cursor: pointer; color: #ffffff; user-select: none; transition: 0.2s; }
+        .hamburger-inner:hover { opacity: 0.8; }
+
+        /* Sidebar Links */
+        .sidebar a {
+            color: #e0f2fe; text-decoration: none; padding: 15px 20px; display: flex; align-items: center;
+            gap: 15px; transition: 0.3s; font-weight: 500; margin: 0 10px 5px 10px; border-radius: 8px;
+        }
+        .sidebar.collapsed a { justify-content: center; padding: 15px 0; gap: 0; }
+        .sidebar.collapsed a .link-text { display: none; }
+        .sidebar.collapsed a .icon { font-size: 20px; }
+        .sidebar a:hover, .sidebar a.active { background-color: rgba(255, 255, 255, 0.2); color: #ffffff; }
+
+        /* Logout Link Styles */
+        .logout-link { margin-top: auto; margin-bottom: 20px !important; color: #fecaca !important; }
+        .logout-link:hover { background-color: rgba(239, 68, 68, 0.2) !important; color: #ffffff !important; }
+        @keyframes slideOut { 0% { transform: translateX(0); } 50% { transform: translateX(6px); } 100% { transform: translateX(0); } }
+        .logout-link:hover .logout-icon svg { animation: slideOut 1s infinite ease-in-out; stroke: #ffffff; }
+
+        /* Main Content */
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; transition: 0.3s ease; width: 100%; }
+        
+        /* Navbar */
+        .navbar { 
+            background-color: #ffffff; padding: 15px 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); 
+            display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; height: 71px; 
+        }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .navbar h2 { margin: 0; color: #0f172a; font-size: 20px; }
+        .user-profile { display: flex; align-items: center; gap: 15px; font-weight: 600; color: #475569; }
+        .profile-avatar { width: 35px; height: 35px; border-radius: 50%; background: #0284c7; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; }
+
+        /* Dashboard Container */
+        .container { padding: 40px; display: flex; flex-direction: column; gap: 30px; max-width: 1200px; margin: 0 auto; width: 100%; }
+        .card { background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 20px; }
+        .stat-box { background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; }
+        .stat-box p { color: #64748b; margin: 0; font-size: 14px; font-weight: bold; }
+        .stat-box h2 { margin: 10px 0 0 0; color: #0f172a; font-size: 32px; }
+
+        /* Buttons & Toggles */
+        .btn-qr-nav { display: flex; align-items: center; gap: 8px; background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-qr-nav:hover { background-color: #e0f2fe; }
+        .btn-qr-nav svg { width: 18px; height: 18px; fill: #0284c7; }
+        .btn { background-color: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn:hover { background-color: #0369a1; }
+        .btn-outline { background-color: transparent; color: #64748b; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-outline:hover { background-color: #f1f5f9; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
+        .modal-content { background-color: #ffffff; padding: 30px; border-radius: 12px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; animation: modalFadeIn 0.3s ease; }
+        @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        .close-btn { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; color: #94a3b8; transition: 0.2s; line-height: 1; }
+        .close-btn:hover { color: #ef4444; }
+
+        /* QR Code Inside Modal */
+        .qr-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .qr-placeholder { width: 250px; height: 250px; background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #64748b; font-size: 14px; overflow: hidden; transition: 0.3s; cursor: pointer; }
+        .qr-placeholder:hover { border-color: #0284c7; background-color: #f0f9ff; }
+        .qr-placeholder img.real-qr { width: 100%; height: 100%; object-fit: contain; display: none; }
+        .qr-logo-svg { width: 80px; height: 80px; fill: #0284c7; margin-bottom: 15px; }
+        #qrCover { display: flex; flex-direction: column; align-items: center; }
+
+        .toggle-label { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #475569; font-weight: bold; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #0284c7; }
+        input:focus + .slider { box-shadow: 0 0 1px #0284c7; }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .success-card { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; height: 250px; background-color: #f0fff4; border: 2px solid #2e7d32; border-radius: 12px; color: #2e7d32; }
+        
+        /* Navbar Status Badge */
+        #navStatusBadge { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; transition: 0.3s; margin-right: 15px; }
+
+        /* --- SPA View Toggles --- */
+        .view-section { display: none; }
+        .view-section.active { display: block; animation: fadeView 0.3s ease; }
+        @keyframes fadeView { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- Templates UI --- */
+        .templates-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .templates-list { display: flex; flex-direction: column; gap: 15px; }
+        .template-card { background: white; padding: 15px 20px; border-radius: 10px; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 20px; }
+        .template-card:hover { border-color: #0284c7; box-shadow: 0 4px 10px rgba(2, 132, 199, 0.1); transform: translateY(-2px); }
+        .template-card h4 { margin: 0; color: #0f172a; width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px; }
+        .template-card .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; width: 100px; text-align: center; }
+        .template-card p { margin: 0; color: #64748b; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
+
+        .create-template-card { justify-content: center; background: #f8fafc; border: 2px dashed #cbd5e1; color: #64748b; font-weight: bold; padding: 15px; }
+        .create-template-card:hover { border-color: #0284c7; color: #0284c7; background: #f0f9ff; }
+        .create-template-card span { font-size: 24px; margin-right: 10px; line-height: 1; }
+
+        /* Template Editor Form */
+        .editor-container { display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #475569; font-weight: bold; font-size: 14px; }
+        .form-control { width: 100%; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 14px; transition: border 0.2s; }
+        .form-control:focus { outline: none; border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
+        textarea.form-control { resize: vertical; min-height: 150px; }
+
+        /* Formatting Toolbar */
+        .toolbar { display: flex; gap: 5px; padding: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-bottom: none; border-radius: 6px 6px 0 0; }
+        .tool-btn { background: white; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; color: #475569; transition: 0.2s; font-size: 14px; }
+        .tool-btn:hover { background: #e2e8f0; color: #0f172a; }
+        .tool-btn.var-btn { color: #0284c7; border-color: #bae6fd; background: #e0f2fe; }
+        .editor-textarea { border-radius: 0 0 6px 6px !important; }
+
+        /* Live Preview WhatsApp Bubble */
+        .preview-panel { background: #efeae2; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; position: relative; }
+        .preview-panel::before { content: "WhatsApp Live Preview"; position: absolute; top: -12px; background: #0284c7; color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .chat-bubble { background: white; padding: 10px 12px; border-radius: 8px; border-top-left-radius: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-size: 14px; color: #111b21; max-width: 100%; word-wrap: break-word; white-space: pre-wrap; line-height: 1.5; position: relative; margin-top: 20px; align-self: flex-start; }
+        .chat-bubble::before { content: ""; position: absolute; top: 0; left: -8px; width: 0; height: 0; border-top: 10px solid white; border-left: 10px solid transparent; }
+        .chat-bubble b { font-weight: 600; }
+        .chat-bubble i { font-style: italic; }
+        .chat-bubble s { text-decoration: line-through; }
+        .chat-bubble code { background: #f0f0f0; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+        .preview-media { width: 100%; border-radius: 6px; margin-bottom: 8px; display: none; max-height: 200px; object-fit: cover; }
+        .file-box { background: #f0f0f0; padding: 15px; border-radius: 6px; display: none; align-items: center; gap: 10px; margin-bottom: 8px; font-weight: bold; color: #ef4444; }
+
+        /* --- Live Chat UI --- */
+        .livechat-layout { display: flex; height: 75vh; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #fff; }
+        .livechat-sidebar { width: 320px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; background: #f8fafc; }
+        .livechat-header { padding: 15px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #0f172a; display:flex; justify-content: space-between; align-items: center; }
+        .livechat-list { flex: 1; overflow-y: auto; }
+        .chat-item { padding: 15px; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; }
+        .chat-item:hover { background: #e2e8f0; }
+        .chat-item.active { background: #e0f2fe; border-left: 4px solid #0284c7; }
+        .chat-item-name { font-weight: bold; color: #0f172a; font-size: 15px; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        .chat-item-msg { color: #64748b; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .livechat-main { flex: 1; display: flex; flex-direction: column; background: #efeae2; position: relative; }
+        .livechat-main-header { padding: 15px 20px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #0f172a; display: flex; align-items: center; gap: 15px; }
+        .livechat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg-bubble { max-width: 70%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
+        .msg-bubble.received { background: white; align-self: flex-start; border-top-left-radius: 0; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+        .msg-bubble.sent { background: #d9fdd3; align-self: flex-end; border-top-right-radius: 0; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+        .msg-time { font-size: 10px; color: #64748b; text-align: right; margin-top: 4px; display: block; }
+        
+        .livechat-input-area { padding: 15px; background: #f1f5f9; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
+        .livechat-input { flex: 1; padding: 12px 15px; border: none; border-radius: 24px; outline: none; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-container">
+                <svg class="brand-logo-anim" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                    <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157.1zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+                </svg>
+                <span class="brand-text">Elite AutoMsg</span>
+            </div>
+            <span class="hamburger-inner" onclick="toggleSidebar()">☰</span>
+        </div>
+        
+        <a href="#" class="nav-link active" id="nav-dashboard" onclick="switchView('dashboard')">
+            <span class="icon">📊</span>
+            <span class="link-text">Dashboard</span>
+        </a>
+        <a href="#" class="nav-link" id="nav-templates" onclick="switchView('templates')">
+            <span class="icon">📝</span>
+            <span class="link-text">Templates</span>
+        </a>
+        <a href="#" class="nav-link" id="nav-chatbot" onclick="switchView('chatbot')">
+            <span class="icon">🤖</span>
+            <span class="link-text">Chatbot</span>
+        </a>
+        <a href="#" class="nav-link" id="nav-bulk" onclick="switchView('bulk')">
+            <span class="icon">📨</span>
+            <span class="link-text">Bulk Messaging</span>
+        </a>
+        <a href="#" class="nav-link" id="nav-crm" onclick="switchView('crm')">
+            <span class="icon">👥</span>
+            <span class="link-text">CRM & Contacts</span>
+        </a>
+        <a href="#" class="nav-link" id="nav-scheduled" onclick="switchView('scheduled')">
+            <span class="icon">⏰</span>
+            <span class="link-text">Scheduled</span>
+        </a>
+        <a href="#" class="nav-link" id="nav-scraper" onclick="switchView('scraper')">
+            <span class="icon">🔍</span>
+            <span class="link-text">Group Scraper</span>
+        </a>
+        <a href="#" class="nav-link" id="nav-livechat" onclick="switchView('livechat')">
+            <span class="icon">💬</span>
+            <span class="link-text">Live Chat Inbox</span>
+        </a>
+        <a href="#" class="nav-link" id="nav-webhooks" onclick="switchView('webhooks')">
+            <span class="icon">⚡</span>
+            <span class="link-text">Webhooks</span>
+        </a>
+        <a href="#" class="nav-link" id="nav-api" onclick="switchView('api')">
+            <span class="icon">🔗</span>
+            <span class="link-text">API Integration</span>
+        </a>
+
+        <a href="#" class="nav-link" id="nav-settings" onclick="switchView('settings')">
+            <span class="icon">⚙️</span>
+            <span class="link-text">Settings</span>
+        </a>
+        <a href="#" class="nav-link logout-link" onclick="logoutUser()">
+            <span class="icon logout-icon" style="display:flex;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fecaca" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </span>
+            <span class="link-text">Logout</span>
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="navbar">
+            <div class="nav-left">
+                <h2 id="pageTitle">WhatsApp Server Control</h2>
+            </div>
+            <div class="user-profile">
+                <!-- Status Indicator -->
+                <div id="navStatusBadge">
+                    <span id="navStatusDot">🟡</span> 
+                    <span id="navStatusText">Initializing...</span>
+                </div>
+                
+                <!-- Trigger Button for API Settings -->
+                <button class="btn-qr-nav" onclick="switchView('settings')">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                    </svg>
+                    API Settings
+                </button>
+                <div class="profile-avatar" id="navProfileLogo">A</div>
+                <span id="navProfileName">My Account</span>
+            </div>
+        </div>
+
+        <div class="container">
+            
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard" class="view-section active">
+                
+                <!-- ADMIN DASHBOARD -->
+                <div id="adminStatsContainer" style="display:none;">
+                    <h3 style="margin-top: 0; margin-bottom: 20px; color: #0f172a;">Platform Overview</h3>
+                    <div class="stats-grid" style="margin-bottom: 30px;">
+                        <div class="stat-box"><p>Total Customers</p><h2 id="stTotalCustomers" style="color: #6366f1;">0</h2></div>
+                        <div class="stat-box"><p>Active Connections</p><h2 id="stActiveConnections" style="color: #22c55e;">0</h2></div>
+                        <div class="stat-box"><p>Expiring Soon (7 days)</p><h2 id="stExpiringSoon" style="color: #f59e0b;">0</h2></div>
+                    </div>
+                </div>
+
+                <!-- PERSONAL STATS -->
+                <div id="customerStatsContainer">
+                    <h3 style="margin-top: 0; margin-bottom: 20px; color: #0f172a;">My WhatsApp Campaign</h3>
+                    <div class="stats-grid">
+                        <div class="stat-box"><p>Messages Sent</p><h2 id="stSent" style="color: #0284c7;">0</h2></div>
+                        <div class="stat-box"><p>Messages Failed</p><h2 id="stFailed" style="color: #ef4444;">0</h2></div>
+                        <div class="stat-box"><p>Replies Received</p><h2 id="stReplies" style="color: #22c55e;">0</h2></div>
+                        <div class="stat-box" style="display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                            <p style="margin-bottom: 10px;">Meta Cloud API</p>
+                            <h2 id="linkedNumber" style="font-size: 16px; line-height: 1.5; color: #64748b; display:none;">Not Configured</h2>
+                            <button class="btn" style="padding: 8px 16px; font-size: 14px;" onclick="switchView('settings')">Configure API</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEMPLATES VIEW -->
+            <div id="view-templates" class="view-section">
+                
+                <!-- List View -->
+                <div id="template-list-container">
+                    <div class="templates-header">
+                        <h3 style="margin:0; color:#0f172a;">Message Templates</h3>
+                    </div>
+                    <div class="templates-list" id="templatesGrid">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Editor View -->
+                <div id="template-editor-container" style="display:none;">
+                    <div class="templates-header">
+                        <h3 style="margin:0; color:#0f172a;" id="editorTitle">Create Template</h3>
+                        <button class="btn-outline" onclick="hideTemplateEditor()">Back to List</button>
+                    </div>
+                    
+                    <div class="card">
+                        <form id="templateForm" onsubmit="saveTemplate(event)">
+                            <div class="editor-container">
+                                <!-- Form Column -->
+                                <div>
+                                    <div class="form-group">
+                                        <label>Template Name</label>
+                                        <input type="text" id="tplName" class="form-control" placeholder="e.g. Welcome Message" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Message Type</label>
+                                        <select id="tplType" class="form-control" onchange="toggleMediaInput()">
+                                            <option value="text">Text Only</option>
+                                            <option value="image">Image</option>
+                                            <option value="video">Video</option>
+                                            <option value="document">Document (PDF)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" id="mediaInputGroup" style="display:none;">
+                                        <label>Upload Media File</label>
+                                        <input type="file" id="tplMedia" class="form-control" onchange="previewMedia(this)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Message Body</label>
+                                        <div class="toolbar">
+                                            <button type="button" class="tool-btn" onclick="insertTag('*')" title="Bold">B</button>
+                                            <button type="button" class="tool-btn" onclick="insertTag('_')" title="Italic">I</button>
+                                            <button type="button" class="tool-btn" onclick="insertTag('~')" title="Strikethrough">S</button>
+                                            <button type="button" class="tool-btn" onclick="insertText('😊')" title="Emoji">😊</button>
+                                            <button type="button" class="tool-btn var-btn" onclick="insertText('{{name}}')" title="Insert Variable">{{Var}}</button>
+                                        </div>
+                                        <textarea id="tplMessage" class="form-control editor-textarea" placeholder="Type your WhatsApp message here... Use {{name}} for dynamic variables." oninput="updateLivePreview()"></textarea>
+                                    </div>
+                                    
+                                    <!-- Action Buttons Section -->
+                                    <div class="form-group">
+                                        <label>Interactive Buttons (Optional)</label>
+                                        <div id="buttonList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:10px;"></div>
+                                        <button type="button" class="btn-outline" style="padding: 5px 10px; font-size: 12px;" onclick="addActionButton()">+ Add Button</button>
+                                    </div>
+
+                                    <button type="submit" class="btn" id="saveTplBtn">💾 Save Template</button>
+                                </div>
+                                
+                                <!-- Preview Column -->
+                                <div class="preview-panel">
+                                    <div class="chat-bubble">
+                                        <img id="liveMediaImg" class="preview-media" src="" />
+                                        <video id="liveMediaVid" class="preview-media" controls></video>
+                                        <div id="liveMediaDoc" class="file-box">📄 <span id="docName">Document.pdf</span></div>
+                                        
+                                        <div id="livePreviewText">Type a message to see the preview...</div>
+                                        <div id="livePreviewButtons" style="display:none; flex-direction:column; margin-top:8px; border-top:1px solid #e2e8f0; margin-left:-12px; margin-right:-12px; margin-bottom:-10px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- CHATBOT VIEW -->
+            <div id="view-chatbot" class="view-section">
+                <form id="dmBotForm" onsubmit="saveChatbotConfig(event)">
+                    <div class="card" style="margin-bottom: 20px;">
+                        <h3 style="margin-top:0; color:#0f172a;">1. Direct Message (DM) Auto-Reply</h3>
+                        <p style="color:#64748b; font-size: 14px;">Automatically reply to users who message you directly (e.g. replies to your blast).</p>
+                        
+                        <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-top: 15px;">
+                            <label class="switch">
+                                <input type="checkbox" id="cbDmEnabled">
+                                <span class="slider"></span>
+                            </label>
+                            <span style="font-weight: bold; color: #475569;">Enable DM Auto-Reply</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Auto-Reply Message</label>
+                            <textarea id="cbDmMessage" class="form-control" style="min-height: 100px;" placeholder="Thank you for your enquiry! How can we help you today?"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-top:0; color:#0f172a;">2. Group Pricing Bot (Google Sheets)</h3>
+                        <p style="color:#64748b; font-size: 14px;">Automatically fetch prices from a public Google Sheet when someone asks in a WhatsApp Group.</p>
+                        
+                        <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-top: 15px;">
+                            <label class="switch">
+                                <input type="checkbox" id="cbGroupEnabled">
+                                <span class="slider"></span>
+                            </label>
+                            <span style="font-weight: bold; color: #475569;">Enable Group Pricing Bot</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Trigger Keyword</label>
+                            <input type="text" id="cbTriggerKeyword" class="form-control" placeholder="e.g. price">
+                            <small style="color:#94a3b8;">Users must type this keyword followed by the product name (e.g. "price iphone")</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Google Sheet URL (Must be 'Anyone with the link can view')</label>
+                            <input type="url" id="cbSheetUrl" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
+                        </div>
+                    </div>
+
+                    <div class="card" style="margin-top: 20px;">
+                        <h3 style="margin-top:0; color:#0f172a;">3. Interactive Menu Chatbot (Flow Builder)</h3>
+                        <p style="color:#64748b; font-size: 14px;">Build a multi-level menu. Note: "main" is the starting step. Users can type 0 or #menu to return to main.</p>
+                        
+                        <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-top: 15px;">
+                            <label class="switch">
+                                <input type="checkbox" id="cbFlowEnabled" onchange="document.getElementById('flowBuilderContainer').style.display = this.checked ? 'block' : 'none'">
+                                <span class="slider"></span>
+                            </label>
+                            <span style="font-weight: bold; color: #475569;">Enable Interactive Menu Chatbot</span>
+                        </div>
+                        
+                        <div id="flowBuilderContainer" style="display:none; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                            <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;">
+                                <h4 style="margin:0;">Menu Steps</h4>
+                                <button type="button" class="btn-outline" style="padding: 5px 10px; font-size:12px;" onclick="addFlowStep()">+ Add Custom Step</button>
+                            </div>
+                            <div id="flowStepsList" style="display:flex; flex-direction:column; gap: 15px;">
+                                <!-- Dynamic steps here -->
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 25px;">
+                            <button type="submit" class="btn" id="saveCbBtn">💾 Save All Chatbot Settings</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- API INTEGRATION VIEW -->
+            <div id="view-api" class="view-section">
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3 style="margin-top:0; color:#0f172a;">Developer API Integration</h3>
+                    <p style="color:#64748b; font-size: 14px;">Connect external applications (like Pabbly, Zapier, or your own software) to send WhatsApp messages automatically.</p>
+                    
+                    <div style="margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
+                        <h4 style="margin-top: 0;">Your API Key</h4>
+                        <div style="display:flex; align-items:center; gap: 10px;">
+                            <input type="text" id="displayApiKey" class="form-control" readonly style="font-family: monospace; background: #fff;">
+                            <button class="btn" onclick="navigator.clipboard.writeText(document.getElementById('displayApiKey').value); alert('Copied!');">Copy</button>
+                        </div>
+                        <p style="font-size: 12px; color: #ef4444; margin-top: 5px;">Keep this key secret. Do not share it publicly.</p>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <h4>API Endpoint</h4>
+                        <code style="background: #e2e8f0; padding: 5px 10px; border-radius: 4px; font-family: monospace;">POST http://localhost:3000/api/v1/send-message</code>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <h4>How to use (JSON Payload)</h4>
+                        <pre style="background: #1e293b; color: #f8fafc; padding: 15px; border-radius: 8px; overflow-x: auto;">
+{
+    "apiKey": "YOUR_API_KEY_HERE",
+    "number": "919876543210",
+    "message": "Hello from Pabbly!"
+}
+                        </pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW PREMIUM FEATURES -->
+            <div id="view-bulk" class="view-section">
+                <div class="card">
+                    <h3 style="margin-top:0; color:#0f172a;">Bulk Messaging & Campaign Management</h3>
+                    <p style="color:#64748b; font-size:14px; margin-bottom: 20px;">Upload a CSV file and send thousands of personalized messages. <br><strong style="color:#ef4444;">Anti-Ban Feature:</strong> The system automatically waits 3-5 seconds between messages.</p>
+                    
+                    <form id="bulkSendForm" onsubmit="startBulkCampaign(event)">
+                        <div class="form-group">
+                            <div style="display:flex; justify-content: space-between; align-items:flex-end;">
+                                <label style="margin:0;">1. Choose a Saved Template</label>
+                                <span style="font-size: 12px; color: #0284c7;">Manage templates in the <a href="#" onclick="switchView('templates')" style="color:inherit">Templates</a> menu</span>
+                            </div>
+                            <select id="bulkTemplateSelect" class="form-control" required onchange="loadSelectedBulkTemplate()">
+                                <option value="">-- Select a template --</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display:none;">
+                            <textarea id="bulkMessage" class="form-control" rows="5"></textarea>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 20px;">
+                            <div style="display:flex; justify-content: space-between; align-items:flex-end;">
+                                <label style="margin:0;">2. Upload Excel/CSV File</label>
+                                <button type="button" class="btn-outline" style="padding:4px 8px; font-size:12px;" onclick="downloadSampleCsv()">Download Sample CSV</button>
+                            </div>
+                            <input type="file" id="bulkCsvFile" class="form-control" accept=".csv" required style="padding: 10px;">
+                            <small style="color:#94a3b8; display:block; margin-top:5px;">File MUST contain a column named "Phone" or "Number" (with country code, e.g., 919876543210).</small>
+                        </div>
+
+                        <div style="margin-top: 25px;">
+                            <button type="submit" class="btn" id="bulkSendBtn" style="width:100%; font-size: 16px; padding: 12px;">🚀 Start Bulk Campaign</button>
+                        </div>
+                    </form>
+                    
+                    <div id="bulkStatusBox" style="display:none; margin-top: 20px; padding: 15px; border-radius: 8px; background: #ecfdf5; border: 1px solid #10b981; color: #065f46;">
+                        <strong>Campaign Started!</strong> Your messages are being sent in the background. You can check the "Messages Sent" counter on your Dashboard.
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTACTS & CRM VIEW -->
+            <div id="view-crm" class="view-section">
+                <div class="card" style="margin-bottom: 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="margin-top:0; color:#0f172a;">Contact Management & CRM</h3>
+                        <div style="display:flex; gap: 10px;">
+                            <button class="btn-outline" onclick="document.getElementById('importCsvInput').click()" style="padding: 6px 12px; font-size: 14px;">📥 Import CSV</button>
+                            <input type="file" id="importCsvInput" accept=".csv" style="display:none" onchange="importContacts(event)">
+                            
+                            <select id="exportCategorySelect" class="form-control" style="width: 150px; padding: 6px; font-size: 14px; margin: 0;">
+                                <option value="All">All Categories</option>
+                            </select>
+                            <button class="btn-outline" onclick="exportContacts()" style="padding: 6px 12px; font-size: 14px;">📤 Export CSV</button>
+                        </div>
+                    </div>
+                    
+                    <form id="addContactForm" onsubmit="addContact(event)" style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 15px; display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                        <div style="flex:1; min-width: 150px;">
+                            <label style="font-size: 12px; margin-bottom: 5px; display:block;">Name</label>
+                            <input type="text" id="contactName" class="form-control" placeholder="John Doe" required>
+                        </div>
+                        <div style="flex:1; min-width: 150px;">
+                            <label style="font-size: 12px; margin-bottom: 5px; display:block;">Phone (with country code)</label>
+                            <input type="text" id="contactPhone" class="form-control" placeholder="919876543210" required>
+                        </div>
+                        <div style="flex:1; min-width: 150px;">
+                            <label style="font-size: 12px; margin-bottom: 5px; display:block;">Category / Tag</label>
+                            <input type="text" id="contactTag" class="form-control" placeholder="e.g. VIP, Customer">
+                        </div>
+                        <button type="submit" class="btn" style="padding: 10px 20px;">+ Add</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone Number</th>
+                                <th>Category / Tag</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contactsTableBody">
+                            <!-- Contacts populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SCHEDULED MESSAGING VIEW -->
+            <div id="view-scheduled" class="view-section">
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3 style="margin-top:0; color:#0f172a;">Schedule a New Message</h3>
+                    <p style="color:#64748b; font-size:14px; margin-bottom: 20px;">Set a date and time to automatically blast messages. You can turn off your computer; the server will handle it!</p>
+                    
+                    <form id="scheduleForm" onsubmit="createSchedule(event)">
+                        <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom: 15px;">
+                            <div style="flex:1; min-width:200px;">
+                                <label style="font-size:12px; margin-bottom:5px; display:block;">Date</label>
+                                <input type="date" id="schedDate" class="form-control" required>
+                            </div>
+                            <div style="flex:1; min-width:200px;">
+                                <label style="font-size:12px; margin-bottom:5px; display:block;">Time</label>
+                                <input type="time" id="schedTime" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size:12px; margin-bottom:5px; display:block;">Choose Message Template</label>
+                            <select id="schedTemplateSelect" class="form-control" required>
+                                <option value="">-- Select Template --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size:12px; margin-bottom:5px; display:block;">Target Audience</label>
+                            <select id="schedTargetType" class="form-control" required onchange="toggleSchedTargetInputs()">
+                                <option value="single">Single Phone Number</option>
+                                <option value="crm">CRM Contacts / Category</option>
+                                <option value="csv">Upload CSV File</option>
+                            </select>
+                        </div>
+
+                        <div id="schedTargetSingle" class="form-group">
+                            <input type="text" id="schedPhone" class="form-control" placeholder="Phone Number (e.g. 919876543210)">
+                        </div>
+                        <div id="schedTargetCrm" class="form-group" style="display:none;">
+                            <select id="schedCrmCategory" class="form-control">
+                                <option value="All">All Saved Contacts</option>
+                            </select>
+                        </div>
+                        <div id="schedTargetCsv" class="form-group" style="display:none;">
+                            <input type="file" id="schedCsvFile" class="form-control" accept=".csv">
+                        </div>
+
+                        <div style="margin-top: 25px;">
+                            <button type="submit" class="btn" id="schedBtn" style="width:100%; font-size: 16px; padding: 12px;">⏰ Schedule Message</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-top:0; color:#0f172a;">Your Schedules</h3>
+                    <table class="table" style="margin-top: 15px;">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Target</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schedulesTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- WHATSAPP GROUP SCRAPER VIEW -->
+            <div id="view-scraper" class="view-section">
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3 style="margin-top:0; color:#0f172a;">WhatsApp Group Scraper</h3>
+                    <p style="color:#64748b; font-size:14px;">Extract all phone numbers from your connected WhatsApp groups instantly.</p>
+                    
+                    <button class="btn" onclick="loadScraperGroups()" id="btnLoadGroups" style="margin-top: 15px;">🔄 Load My Groups</button>
+                    
+                    <div id="scraperGroupSelection" style="display:none; margin-top: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+                        <label style="font-size:12px; margin-bottom:5px; display:block;">Select a Group</label>
+                        <select id="scraperGroupSelect" class="form-control" style="margin-bottom: 10px;">
+                            <!-- Populated via JS -->
+                        </select>
+                        <button class="btn" onclick="scrapeSelectedGroup()" id="btnScrapeGroup">🔍 Scrape Numbers</button>
+                    </div>
+                </div>
+
+                <div class="card" id="scraperResultsCard" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                        <h3 style="margin-top:0; color:#0f172a;">Extracted Numbers (<span id="scrapeCount">0</span>)</h3>
+                        <div style="display:flex; gap: 10px;">
+                            <button class="btn-outline" onclick="exportScrapedCsv()">📤 Export as CSV</button>
+                            <button class="btn-outline" onclick="saveScrapedToCrm()" style="color: #10b981; border-color: #10b981;">💾 Save to CRM</button>
+                        </div>
+                    </div>
+                    
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <table class="table" style="margin: 0;">
+                            <thead>
+                                <tr>
+                                    <th style="position: sticky; top: 0; background: #f8fafc;">Phone Number</th>
+                                    <th style="position: sticky; top: 0; background: #f8fafc;">Name (If available)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scraperTableBody">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-livechat" class="view-section">
+                <div class="card" style="padding: 0; border: none; box-shadow: none; background: transparent;">
+                    <div class="livechat-layout">
+                        <!-- Sidebar -->
+                        <div class="livechat-sidebar">
+                            <div class="livechat-header">
+                                <span>Recent Chats</span>
+                                <button class="btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="loadConversations()">🔄</button>
+                            </div>
+                            <div class="livechat-list" id="chatList">
+                                <div style="padding: 20px; text-align: center; color: #64748b;">Loading chats...</div>
+                            </div>
+                        </div>
+
+                        <!-- Main Chat Area -->
+                        <div class="livechat-main">
+                            <div class="livechat-main-header" id="activeChatHeader">
+                                <span style="font-size: 24px; color: #94a3b8;">👤</span>
+                                <span id="activeChatName">Select a chat to start messaging</span>
+                            </div>
+                            
+                            <div class="livechat-messages" id="chatMessages">
+                                <div style="margin: auto; text-align: center; color: #94a3b8; font-size: 14px;">
+                                    WhatsApp Web interface integrated.<br>Messages are end-to-end encrypted.
+                                </div>
+                            </div>
+
+                            <div class="livechat-input-area" id="chatInputArea" style="display:none; align-items: center;">
+                                <input type="text" id="chatInput" class="livechat-input" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                                <button class="btn" style="border-radius: 50%; width: 45px; height: 45px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="sendChatMessage()">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-webhooks" class="view-section">
+                <div class="card">
+                    <h3 style="margin-top:0; color:#0f172a;">Webhook Integration</h3>
+                    <p style="color:#64748b;">Send incoming WhatsApp message data directly to your CRM or custom software automatically.</p>
+                    <div style="background:#f8fafc; padding:40px; text-align:center; border:2px dashed #cbd5e1; border-radius:12px; margin-top:20px;">
+                        <span style="font-size: 48px;">⚡</span>
+                        <h4 style="color:#0f172a; margin-top:15px; margin-bottom:5px;">Coming Soon!</h4>
+                        <p style="color:#64748b; font-size:14px;">This premium feature is currently under development.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS / ADMIN VIEW -->
+            <div id="view-settings" class="view-section">
+                <div id="customerSettingsView" style="display:none;">
+                    <div class="card" style="text-align: center;">
+                        <h3 style="margin-top:0;">WhatsApp Web Connection</h3>
+                        <p style="color:#64748b; margin-bottom:20px;">Link your WhatsApp account by scanning the QR code, just like WhatsApp Web.</p>
+                        
+                        <div id="qrStatusContainer" style="margin: 20px 0; font-size: 18px; font-weight: bold; color: #f59e0b;">
+                            Status: Checking connection...
+                        </div>
+
+                        <div id="qrImageContainer" style="display: none; margin: 20px auto;">
+                            <img id="qrCodeImg" src="" alt="WhatsApp QR Code" style="max-width: 250px; border: 2px solid #e2e8f0; border-radius: 8px; padding: 10px; background: white;">
+                            <p style="color: #64748b; font-size: 14px; margin-top: 10px;">Open WhatsApp on your phone > Linked Devices > Link a Device</p>
+                        </div>
+
+                        <div style="margin-top: 20px; display: flex; justify-content: center; gap: 15px;">
+                            <button class="btn" id="startAuthBtn" onclick="startWhatsAppAuth()">Connect / Get QR Code</button>
+                            <button class="btn-outline" id="logoutAuthBtn" onclick="logoutWhatsApp()" style="display: none; color: #ef4444; border-color: #ef4444;">Disconnect</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="adminSettingsView" style="display:none; margin-top: 20px;">
+                    <h3 style="color:#0f172a; margin-top:0;">Admin Panel: Customer Management</h3>
+                    <div class="card" style="margin-bottom:20px;">
+                        <h4 style="margin-top:0;" id="custFormTitle">Create / Edit Customer</h4>
+                        <form id="custForm" onsubmit="saveCustomer(event)">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                                <div class="form-group">
+                                    <label>Company Name</label>
+                                    <input type="text" id="custCompany" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Customer Name</label>
+                                    <input type="text" id="custName" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Contact Number</label>
+                                    <input type="text" id="custContact" class="form-control" oninput="generateUsername()" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Subscription Duration (Days)</label>
+                                    <input type="number" id="custDuration" class="form-control" placeholder="e.g. 7" oninput="calculateExpiryDate()" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Trial Expiry Date (Auto-calculated)</label>
+                                    <input type="date" id="custTrial" class="form-control" required>
+                                </div>
+                            </div>
+                            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                                <div class="form-group">
+                                    <label>Username (Login ID)</label>
+                                    <input type="text" id="custUsername" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Password</label>
+                                    <input type="text" id="custPassword" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Allowed Features</label>
+                                <div style="display:flex; gap:20px;">
+                                    <label><input type="checkbox" class="feature-cb" value="dashboard" checked> Dashboard</label>
+                                    <label><input type="checkbox" class="feature-cb" value="templates"> Templates</label>
+                                    <label><input type="checkbox" class="feature-cb" value="chatbot"> Chatbot</label>
+                                    <label><input type="checkbox" class="feature-cb" value="api"> API Integration</label>
+                                    <label><input type="checkbox" class="feature-cb" value="bulk"> Bulk Messaging</label>
+                                    <label><input type="checkbox" class="feature-cb" value="crm"> CRM</label>
+                                    <label><input type="checkbox" class="feature-cb" value="scheduled"> Scheduled</label>
+                                    <label><input type="checkbox" class="feature-cb" value="scraper"> Group Scraper</label>
+                                    <label><input type="checkbox" class="feature-cb" value="livechat"> Live Chat</label>
+                                    <label><input type="checkbox" class="feature-cb" value="webhooks"> Webhooks</label>
+                                    <label><input type="checkbox" class="feature-cb" value="settings"> Settings</label>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap: 10px;">
+                                <button type="submit" class="btn" id="saveCustBtn">Save Customer</button>
+                                <button type="button" class="btn-outline" onclick="resetCustForm()" style="display:none;" id="cancelEditBtn">Cancel Edit</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <h4 style="margin-top:0;">All Customers</h4>
+                        <div id="customersList" style="display:flex; flex-direction:column; gap:15px;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal Overlay (Removed QR) -->
+
+
+    <!-- Firebase SDK (Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+        // TODO: Replace with your actual Firebase project configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyAKKjwBT-oSbuVRCgpKWHho6ygmxmpekRo",
+          authDomain: "automsgelite.firebaseapp.com",
+          projectId: "automsgelite",
+          storageBucket: "automsgelite.firebasestorage.app",
+          messagingSenderId: "864620129643",
+          appId: "1:864620129643:web:51463579e4906119dcf02e",
+          measurementId: "G-RCKGFS6W5W"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        setPersistence(auth, browserLocalPersistence);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // Expose Firebase auth, firestore, and storage methods to the global scope
+        window.firebaseAuth = auth;
+        window.firebaseSignOut = signOut;
+        window.firebaseOnAuthStateChanged = onAuthStateChanged;
+        window.firebaseDb = db;
+        window.firebaseStorage = storage;
+        window.fb = { doc, setDoc, getDoc, collection, getDocs, query, where, deleteDoc, ref, uploadBytes, getDownloadURL };
+    </script>
+
+    <script>
+        let user = null;
+        try {
+            const userDataStr = localStorage.getItem('elite_user');
+            if (userDataStr) {
+                user = JSON.parse(userDataStr);
+            }
+        } catch(e) { console.error("Error parsing user data"); }
+
+        async function logoutUser() { 
+            try {
+                if (window.firebaseAuth && window.firebaseSignOut) {
+                    await window.firebaseSignOut(window.firebaseAuth);
+                }
+            } catch (error) {
+                console.error("Error signing out of Firebase:", error);
+            }
+            localStorage.removeItem('elite_auth'); 
+            localStorage.removeItem('elite_user'); 
+            window.location.href = '/'; 
+        }
+
+        // Wait for modular Firebase SDK to load, then verify auth state
+        function initDashboard() {
+            if (!window.firebaseOnAuthStateChanged) {
+                setTimeout(initDashboard, 50); // wait 50ms and try again
+                return;
+            }
+            window.firebaseOnAuthStateChanged(window.firebaseAuth, (firebaseUser) => {
+                if (!firebaseUser) {
+                // Not authenticated with Firebase, kick to login
+                console.warn("Firebase auth state is null. Redirecting to login...");
+                logoutUser();
+            } else {
+                // Firebase authenticated. Ensure user object exists.
+                if (!user) {
+                    // Fallback if localStorage was cleared but firebase is active
+                    user = { username: firebaseUser.email || firebaseUser.phoneNumber, role: 'customer' };
+                }
+                // Inject the ID if it's missing (Backward compatibility)
+                if (!user.id) {
+                    user.id = firebaseUser.uid;
+                    localStorage.setItem('elite_user', JSON.stringify(user));
+                }
+                
+                // Initialize Dashboard UI now that auth is confirmed
+                const displayName = user.name || user.username || user.email || 'User';
+                document.getElementById('navProfileName').innerText = displayName;
+                document.getElementById('navProfileLogo').innerText = displayName.charAt(0).toUpperCase();
+
+                // Fix missing roles for original owner accounts
+                const ownerEmail = 'sonudas940@gmail.com';
+                const currentEmail = user.email || firebaseUser.email || '';
+                
+                if (!user.role || currentEmail.toLowerCase() === ownerEmail.toLowerCase()) {
+                    user.role = 'admin';
+                    user.allowedFeatures = ['dashboard', 'templates', 'chatbot', 'bulk', 'crm', 'scheduled', 'scraper', 'livechat', 'webhooks', 'api', 'settings'];
+                    localStorage.setItem('elite_user', JSON.stringify(user));
+                }
+                
+                // Setup Permissions
+                const features = user.allowedFeatures || [];
+                document.querySelectorAll('.nav-link').forEach(el => {
+                    if(el.id && el.id.startsWith('nav-')) {
+                        const featureName = el.id.replace('nav-', '');
+                        if(user.role !== 'admin' && !features.includes(featureName)) {
+                            el.style.display = 'none'; // Hide unauthorized menu items
+                        } else {
+                            el.style.display = 'flex'; // Ensure authorized items are visible
+                        }
+                    }
+                });
+
+                // Initialize Meta Cloud Status safely
+                try {
+                    if (user.whatsappPhoneId) {
+                        const ln = document.getElementById('linkedNumber');
+                        if (ln) { ln.innerText = "Configured"; ln.style.display = 'block'; }
+                        const nst = document.getElementById('navStatusText');
+                        if (nst) nst.innerText = "Active (API)";
+                        const nsd = document.getElementById('navStatusDot');
+                        if (nsd) nsd.innerText = "🟢";
+                    } else {
+                        const ln = document.getElementById('linkedNumber');
+                        if (ln) { ln.innerText = "Not Configured"; ln.style.display = 'block'; }
+                        const nst = document.getElementById('navStatusText');
+                        if (nst) nst.innerText = "No API Keys";
+                        const nsd = document.getElementById('navStatusDot');
+                        if (nsd) nsd.innerText = "🟡";
+                    }
+                } catch(err) { console.error("Error setting meta status", err); }
+
+                // Setup Admin View
+
+                if(user.role === 'admin') {
+                    // Admin sees BOTH: their own API settings + customer management
+                    document.getElementById('adminSettingsView').style.display = 'block';
+                    document.getElementById('customerSettingsView').style.display = 'block';
+                    loadCustomers();
+                    loadApiSettings(); // load saved API keys for admin too
+                } else {
+                    document.getElementById('customerSettingsView').style.display = 'block';
+                    loadApiSettings();
+                }
+            }
+        });
+        }
+        initDashboard();
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+
+        // --- SPA Navigation ---
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            const targetView = document.getElementById('view-' + viewId);
+            if (targetView) targetView.classList.add('active');
+            
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            const targetNav = document.getElementById('nav-' + viewId);
+            if (targetNav) targetNav.classList.add('active');
+            
+            let title = 'Dashboard';
+            if(viewId === 'templates') title = 'Message Templates';
+            if(viewId === 'settings') title = user.role === 'admin' ? 'Admin Dashboard' : 'Settings';
+            if(viewId === 'api') title = 'Developer API';
+            if(viewId === 'bulk') title = 'Bulk Messaging';
+            if(viewId === 'crm') title = 'Contacts & CRM';
+            if(viewId === 'scheduled') title = 'Scheduled Messages';
+            if(viewId === 'scraper') title = 'Group Scraper';
+            if(viewId === 'livechat') title = 'Live Chat Inbox';
+            if(viewId === 'webhooks') title = 'Webhooks';
+            document.getElementById('pageTitle').innerText = title;
+
+            if(viewId === 'dashboard') {
+                fetchDashboardStats();
+            }
+            if(viewId === 'settings') {
+                loadApiSettings();
+            }
+            if(viewId === 'bulk') {
+                populateBulkTemplates();
+            }
+            if(viewId === 'crm') {
+                loadContacts();
+            }
+            if(viewId === 'scheduled') {
+                loadSchedules();
+                populateSchedOptions();
+            }
+            if(viewId === 'templates') {
+                hideTemplateEditor();
+                loadTemplates();
+            }
+            if(viewId === 'chatbot') {
+                loadChatbotConfig();
+            }
+            if(viewId === 'api') {
+                document.getElementById('displayApiKey').value = user.apiKey || 'Please log out and log in again to generate your API Key.';
+                const hostUrl = window.location.protocol + '//' + window.location.host;
+                document.querySelector('#view-api code').innerText = 'POST ' + hostUrl + '/api/v1/send-message';
+            }
+        }
+
+        // --- WhatsApp QR Connection Functions ---
+        let qrPollInterval = null;
+
+        async function pollWhatsAppStatus() {
+            try {
+                const res = await fetch('/api/whatsapp/status', {
+                    headers: { 'user-id': user.id || user.uid }
+                });
+                const data = await res.json();
+                
+                const statusDiv = document.getElementById('qrStatusContainer');
+                const qrImg = document.getElementById('qrCodeImg');
+                const qrContainer = document.getElementById('qrImageContainer');
+                const startBtn = document.getElementById('startAuthBtn');
+                const logoutBtn = document.getElementById('logoutAuthBtn');
+
+                if (data.status === 'open') {
+                    statusDiv.innerText = 'Status: Connected ✅';
+                    statusDiv.style.color = '#10b981';
+                    qrContainer.style.display = 'none';
+                    startBtn.style.display = 'none';
+                    logoutBtn.style.display = 'inline-block';
+                    if (qrPollInterval) clearInterval(qrPollInterval);
+
+                    // Update top nav status
+                    const nst = document.getElementById('navStatusText');
+                    const nsd = document.getElementById('navStatusDot');
+                    if (nst) nst.innerText = 'Connected';
+                    if (nsd) nsd.innerText = '🟢';
+                } else if (data.status === 'connecting' || data.status === 'disconnected' || data.status === 'closed') {
+                    statusDiv.innerText = 'Status: Disconnected / Waiting for Scan...';
+                    statusDiv.style.color = '#f59e0b';
+                    startBtn.style.display = 'inline-block';
+                    logoutBtn.style.display = 'none';
+                    startBtn.innerText = 'Get QR Code';
+                    
+                    if (data.qr) {
+                        qrImg.src = data.qr;
+                        qrContainer.style.display = 'block';
+                    } else {
+                        qrContainer.style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to poll status', err);
+            }
+        }
+
+        async function startWhatsAppAuth() {
+            document.getElementById('startAuthBtn').innerText = 'Starting...';
+            try {
+                await fetch('/api/whatsapp/start', {
+                    method: 'POST',
+                    headers: { 'user-id': user.id || user.uid }
+                });
+                // Start polling
+                if (qrPollInterval) clearInterval(qrPollInterval);
+                qrPollInterval = setInterval(pollWhatsAppStatus, 3000);
+                pollWhatsAppStatus();
+            } catch (err) {
+                showToast('Failed to start WhatsApp', 'error');
+                document.getElementById('startAuthBtn').innerText = 'Connect / Get QR Code';
+            }
+        }
+
+        async function logoutWhatsApp() {
+            if (!confirm('Are you sure you want to disconnect WhatsApp?')) return;
+            try {
+                await fetch('/api/whatsapp/logout', {
+                    method: 'POST',
+                    headers: { 'user-id': user.id || user.uid }
+                });
+                showToast('Disconnected successfully', 'success');
+                if (qrPollInterval) clearInterval(qrPollInterval);
+                pollWhatsAppStatus();
+            } catch (err) {
+                showToast('Failed to disconnect', 'error');
+            }
+        }
+
+        function loadApiSettings() {
+            // Re-used by switchView('settings')
+            if (qrPollInterval) clearInterval(qrPollInterval);
+            pollWhatsAppStatus();
+            qrPollInterval = setInterval(pollWhatsAppStatus, 3000);
+        }
+
+        // --- Admin Functions ---
+        let allCustomersCache = [];
+
+
+        function calculateExpiryDate() {
+            const days = parseInt(document.getElementById('custDuration').value) || 0;
+            if(days > 0) {
+                const date = new Date();
+                date.setDate(date.getDate() + days);
+                document.getElementById('custTrial').value = date.toISOString().split('T')[0];
+            }
+        }
+
+        function generateUsername() {
+            if(document.getElementById('custUsername').readOnly) return; // Don't auto-generate if editing an existing user
+            const contact = document.getElementById('custContact').value;
+            const base = contact || '';
+            if(base) {
+                // Keep only numbers for the username (mobile number)
+                const cleanBase = base.replace(/[^0-9]/g, '');
+                document.getElementById('custUsername').value = cleanBase;
+            } else {
+                document.getElementById('custUsername').value = '';
+            }
+        }
+
+        async function loadCustomers() {
+            try {
+                const querySnapshot = await window.fb.getDocs(window.fb.collection(window.firebaseDb, 'users'));
+                const users = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    users.push(data);
+                });
+                allCustomersCache = users;
+                
+                const list = document.getElementById('customersList');
+                list.innerHTML = users.filter(u => u.role !== 'admin').map(u => {
+                    const isExpired = new Date() > new Date(u.trialExpiryDate);
+                    const statusColor = isExpired ? '#ef4444' : '#22c55e';
+                    const statusText = isExpired ? 'Expired' : 'Active';
+                    
+                    return `
+                    <div style="padding:15px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="flex-grow:1; display:grid; grid-template-columns: 1.5fr 1fr 1fr; gap:10px;">
+                            <div>
+                                <h4 style="margin:0 0 5px 0; color:#0f172a;">🏢 ${u.companyName || 'N/A'}</h4>
+                                <span style="font-size:14px; color:#475569;">👤 ${u.name} | 📞 ${u.contactNo || 'N/A'}</span>
+                            </div>
+                            <div>
+                                <p style="margin:0; font-size:12px; color:#64748b; font-weight:bold;">Login ID</p>
+                                <span style="font-size:14px; color:#0f172a;">${u.username}</span>
+                            </div>
+                            <div>
+                                <p style="margin:0; font-size:12px; color:#64748b; font-weight:bold;">Subscription</p>
+                                <span style="font-size:13px; font-weight:bold; color:${statusColor};">${statusText}</span><br>
+                                <span style="font-size:12px; color:#64748b;">Expires: ${new Date(u.trialExpiryDate).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn-outline" style="padding: 6px 15px;" onclick="editCustomer('${u.username}')">✏️ Edit</button>
+                        </div>
+                    </div>
+                `}).join('');
+            } catch(err) {
+                console.error("Error loading customers", err);
+            }
+        }
+
+        function editCustomer(username) {
+            const u = allCustomersCache.find(x => x.username === username);
+            if(!u) return;
+            document.getElementById('custFormTitle').innerText = "Edit Customer: " + u.name;
+            document.getElementById('custUsername').value = u.username;
+            document.getElementById('custUsername').readOnly = true; // prevent changing username to avoid breaking ID
+            document.getElementById('custPassword').value = u.password;
+            document.getElementById('custName').value = u.name;
+            document.getElementById('custCompany').value = u.companyName || '';
+            document.getElementById('custContact').value = u.contactNo || '';
+            document.getElementById('custDuration').value = u.durationDays || '';
+            
+            if(u.trialExpiryDate) {
+                document.getElementById('custTrial').value = new Date(u.trialExpiryDate).toISOString().split('T')[0];
+            }
+            
+            const features = u.allowedFeatures || [];
+            document.querySelectorAll('.feature-cb').forEach(cb => {
+                cb.checked = features.includes(cb.value);
+            });
+            
+            document.getElementById('cancelEditBtn').style.display = 'inline-block';
+            document.getElementById('saveCustBtn').innerText = 'Update Customer';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetCustForm() {
+            document.getElementById('custFormTitle').innerText = "Create / Edit Customer";
+            document.getElementById('custForm').reset();
+            document.getElementById('custUsername').readOnly = false;
+            document.getElementById('cancelEditBtn').style.display = 'none';
+            document.getElementById('saveCustBtn').innerText = 'Save Customer';
+        }
+
+        async function saveCustomer(e) {
+            e.preventDefault();
+            const allowed = Array.from(document.querySelectorAll('.feature-cb:checked')).map(cb => cb.value);
+            const data = {
+                username: document.getElementById('custUsername').value,
+                password: document.getElementById('custPassword').value,
+                companyName: document.getElementById('custCompany').value,
+                name: document.getElementById('custName').value,
+                contactNo: document.getElementById('custContact').value,
+                durationDays: document.getElementById('custDuration').value,
+                role: 'customer',
+                trialExpiryDate: new Date(document.getElementById('custTrial').value).toISOString(),
+                allowedFeatures: allowed
+            };
+            try {
+                // Find existing user to get their ID if editing
+                const existing = allCustomersCache.find(x => x.username === data.username);
+                const docId = existing ? existing.id : 'user_' + Date.now();
+                data.id = docId;
+
+                await window.fb.setDoc(window.fb.doc(window.firebaseDb, 'users', docId), data);
+                
+                // If this is a new user, also create Firebase Auth account
+                if (!existing) {
+                    try {
+                        const email = data.username.includes('@') ? data.username : data.username + '@automsg.app';
+                        // Call our backend to create the Firebase Auth user securely
+                        await fetch('/api/auth/create-user', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ email: email, password: data.password, uid: docId })
+                        });
+                    } catch(authErr) {
+                        console.error('Failed to create auth user:', authErr);
+                    }
+                }
+                
+                alert('Customer saved!');
+                resetCustForm();
+                loadCustomers();
+            } catch(err) { 
+                console.error(err);
+                alert('Error saving'); 
+            }
+        }
+
+        // --- API Settings (Meta Cloud) ---
+        async function saveApiSettings(e) {
+            e.preventDefault();
+            const phoneId = document.getElementById('apiPhoneId').value.trim();
+            const token = document.getElementById('apiToken').value.trim();
+            const btn = document.getElementById('saveApiBtn');
+            btn.innerText = "Saving...";
+            try {
+                // Update Firestore
+                await window.fb.setDoc(window.fb.doc(window.firebaseDb, 'users', user.id), {
+                    whatsappPhoneId: phoneId,
+                    whatsappToken: token
+                }, { merge: true });
+                
+                // Update local storage
+                user.whatsappPhoneId = phoneId;
+                user.whatsappToken = token;
+                localStorage.setItem('elite_user', JSON.stringify(user));
+                
+                alert('API Settings saved successfully!');
+                
+                // Update UI badge
+                document.getElementById('linkedNumber').innerText = phoneId ? "Configured" : "Not Configured";
+                document.getElementById('linkedNumber').style.display = 'block';
+                document.getElementById('navStatusText').innerText = phoneId ? "Active (API)" : "No API Keys";
+                document.getElementById('navStatusDot').innerText = phoneId ? "🟢" : "🟡";
+                
+            } catch(err) {
+                console.error(err);
+                alert("Failed to save settings.");
+            }
+            btn.innerText = "Save Settings";
+        }
+
+        // --- Chatbot Logic ---
+        let flowSteps = [{ id: 'main', text: 'Welcome! Reply 1 for Sales, 2 for Support', options: [] }];
+
+        async function loadChatbotConfig() {
+            try {
+                const uid = window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : (user.uid || user.id);
+                const docSnap = await window.fb.getDoc(window.fb.doc(window.firebaseDb, 'chatbots', uid));
+                const config = docSnap.exists() ? docSnap.data() : null;
+                if(config) {
+                    document.getElementById('cbDmEnabled').checked = config.dmEnabled || false;
+                    document.getElementById('cbDmMessage').value = config.dmMessage || '';
+                    document.getElementById('cbGroupEnabled').checked = config.groupEnabled || false;
+                    document.getElementById('cbTriggerKeyword').value = config.triggerKeyword || '';
+                    document.getElementById('cbSheetUrl').value = config.sheetUrl || '';
+                    
+                    document.getElementById('cbFlowEnabled').checked = config.flowEnabled || false;
+                    document.getElementById('flowBuilderContainer').style.display = config.flowEnabled ? 'block' : 'none';
+                    if (config.flowSteps && config.flowSteps.length > 0) {
+                        flowSteps = config.flowSteps;
+                    }
+                    renderFlowSteps();
+                }
+            } catch(err) { console.error('Error loading chatbot config', err); }
+        }
+
+        async function saveChatbotConfig(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveCbBtn');
+            btn.innerText = 'Saving...';
+            
+            const currentFlowSteps = getFlowStepsFromDOM();
+            
+            const data = {
+                dmEnabled: document.getElementById('cbDmEnabled').checked,
+                dmMessage: document.getElementById('cbDmMessage').value,
+                groupEnabled: document.getElementById('cbGroupEnabled').checked,
+                triggerKeyword: document.getElementById('cbTriggerKeyword').value,
+                sheetUrl: document.getElementById('cbSheetUrl').value,
+                flowEnabled: document.getElementById('cbFlowEnabled').checked,
+                flowSteps: currentFlowSteps
+            };
+            try {
+                const uid = window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : (user.uid || user.id);
+                await window.fb.setDoc(window.fb.doc(window.firebaseDb, 'chatbots', uid), data);
+                alert('Chatbot config saved!');
+                flowSteps = currentFlowSteps;
+                renderFlowSteps();
+            } catch(err) {
+                alert('Error saving config');
+                console.error(err);
+            }
+            btn.innerText = '💾 Save All Chatbot Settings';
+        }
+
+        function renderFlowSteps() {
+            const container = document.getElementById('flowStepsList');
+            container.innerHTML = '';
+            flowSteps.forEach((step, idx) => {
+                const stepHtml = `
+                    <div class="card flow-node" style="border: 1px solid #cbd5e1; padding: 15px; position: relative;">
+                        ${idx > 0 ? `<button type="button" class="close-btn" style="top:10px; right:10px; font-size:16px;" onclick="removeFlowStep(${idx})">✖</button>` : ''}
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Step ID ${idx === 0 ? '(Must be main)' : ''}</label>
+                            <input type="text" class="form-control fn-id" value="${step.id}" ${idx === 0 ? 'readonly' : ''} placeholder="e.g. products">
+                        </div>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Bot Message</label>
+                            <textarea class="form-control fn-text" rows="2" placeholder="e.g. Reply 1 for X">${step.text}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Options (User Replies)</label>
+                            <div class="fn-options-container" style="margin-bottom: 10px;">
+                                ${step.options.map(opt => `
+                                    <div class="fn-option-row" style="display:flex; gap:10px; margin-bottom: 5px; align-items:center;">
+                                        <input type="text" class="form-control fn-opt-key" style="width:100px;" value="${opt.keyword}" placeholder="Keyword (e.g. 1)">
+                                        <span style="color:#64748b;">➔</span>
+                                        <input type="text" class="form-control fn-opt-next" value="${opt.nextNode}" placeholder="Next Step ID">
+                                        <button type="button" class="btn-outline" style="padding:2px 8px; color:#ef4444;" onclick="this.parentElement.remove()">X</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button type="button" class="btn-outline" style="padding: 2px 8px; font-size: 12px;" onclick="addFlowOption(this)">+ Add Option</button>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', stepHtml);
+            });
+        }
+
+        function addFlowStep() {
+            flowSteps = getFlowStepsFromDOM();
+            flowSteps.push({ id: 'step_' + Date.now().toString().slice(-4), text: '', options: [] });
+            renderFlowSteps();
+        }
+
+        function removeFlowStep(idx) {
+            flowSteps = getFlowStepsFromDOM();
+            flowSteps.splice(idx, 1);
+            renderFlowSteps();
+        }
+
+        function addFlowOption(btn) {
+            const container = btn.previousElementSibling;
+            const row = document.createElement('div');
+            row.className = 'fn-option-row';
+            row.style.cssText = 'display:flex; gap:10px; margin-bottom: 5px; align-items:center;';
+            row.innerHTML = `
+                <input type="text" class="form-control fn-opt-key" style="width:100px;" placeholder="Keyword (e.g. 1)">
+                <span style="color:#64748b;">➔</span>
+                <input type="text" class="form-control fn-opt-next" placeholder="Next Step ID">
+                <button type="button" class="btn-outline" style="padding:2px 8px; color:#ef4444;" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function getFlowStepsFromDOM() {
+            const steps = [];
+            const nodes = document.querySelectorAll('.flow-node');
+            nodes.forEach(node => {
+                const id = node.querySelector('.fn-id').value;
+                const text = node.querySelector('.fn-text').value;
+                const options = [];
+                const optionRows = node.querySelectorAll('.fn-option-row');
+                optionRows.forEach(row => {
+                    const key = row.querySelector('.fn-opt-key').value;
+                    const next = row.querySelector('.fn-opt-next').value;
+                    if(key && next) options.push({ keyword: key, nextNode: next });
+                });
+                steps.push({ id, text, options });
+            });
+            return steps;
+        }
+
+        // --- Template Manager Logic ---
+        let actionButtons = [];
+        let editingTemplateId = null;
+        let allTemplatesCache = [];
+
+        function showTemplateEditor(isEdit = false) {
+            document.getElementById('template-list-container').style.display = 'none';
+            document.getElementById('template-editor-container').style.display = 'block';
+            
+            if (!isEdit) {
+                document.getElementById('editorTitle').innerText = "Create Template";
+                document.getElementById('templateForm').reset();
+                actionButtons = [];
+                editingTemplateId = null;
+                renderActionButtons();
+                updateLivePreview();
+                toggleMediaInput();
+            } else {
+                document.getElementById('editorTitle').innerText = "Edit Template";
+            }
+        }
+        function hideTemplateEditor() {
+            document.getElementById('template-list-container').style.display = 'block';
+            document.getElementById('template-editor-container').style.display = 'none';
+        }
+
+        function toggleMediaInput() {
+            const type = document.getElementById('tplType').value;
+            document.getElementById('mediaInputGroup').style.display = type === 'text' ? 'none' : 'block';
+            document.getElementById('liveMediaImg').style.display = 'none';
+            document.getElementById('liveMediaVid').style.display = 'none';
+            document.getElementById('liveMediaDoc').style.display = 'none';
+            updateLivePreview();
+        }
+
+        function previewMedia(input) {
+            if (input.files && input.files[0]) {
+                const type = document.getElementById('tplType').value;
+                const url = URL.createObjectURL(input.files[0]);
+                if(type === 'image') { document.getElementById('liveMediaImg').src = url; document.getElementById('liveMediaImg').style.display = 'block'; }
+                else if(type === 'video') { document.getElementById('liveMediaVid').src = url; document.getElementById('liveMediaVid').style.display = 'block'; }
+                else if(type === 'document') { document.getElementById('docName').innerText = input.files[0].name; document.getElementById('liveMediaDoc').style.display = 'flex'; }
+            }
+        }
+
+        function parseWhatsAppMarkup(text) {
+            if(!text) return "Type a message to see the preview...";
+            let html = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            html = html.replace(/\*(.*?)\*/g, "<b>$1</b>");
+            html = html.replace(/_(.*?)_/g, "<i>$1</i>");
+            html = html.replace(/~(.*?)~/g, "<s>$1</s>");
+            html = html.replace(/```(.*?)```/gs, "<code>$1</code>");
+            html = html.replace(/\{\{(.*?)\}\}/g, "<span style='background:#fff0f0; color:#ef4444; padding:0 2px; border-radius:3px;'>{{$1}}</span>");
+            return html;
+        }
+
+        function updateLivePreview() {
+            const val = document.getElementById('tplMessage').value;
+            document.getElementById('livePreviewText').innerHTML = parseWhatsAppMarkup(val);
+            
+            const btnContainer = document.getElementById('livePreviewButtons');
+            if (actionButtons.length > 0) {
+                btnContainer.style.display = 'flex';
+                btnContainer.innerHTML = actionButtons.map(btn => {
+                    let icon = '';
+                    if(btn.type === 'url') icon = '🔗 ';
+                    if(btn.type === 'call') icon = '📞 ';
+                    return `<div style="text-align:center; padding:10px; color:#0284c7; font-weight:600; border-bottom:1px solid #e2e8f0;">${icon}${btn.text || 'Button'}</div>`;
+                }).join('');
+                if(btnContainer.lastChild) btnContainer.lastChild.style.borderBottom = 'none';
+            } else {
+                btnContainer.style.display = 'none';
+                btnContainer.innerHTML = '';
+            }
+        }
+
+        function addActionButton() {
+            if (actionButtons.length >= 3) { alert("WhatsApp only allows up to 3 buttons."); return; }
+            actionButtons.push({ type: 'reply', text: '', value: '' });
+            renderActionButtons();
+        }
+
+        function removeActionButton(index) {
+            actionButtons.splice(index, 1);
+            renderActionButtons();
+        }
+
+        function updateButtonData(index, field, val) {
+            actionButtons[index][field] = val;
+            if(field === 'type') renderActionButtons();
+            updateLivePreview();
+        }
+
+        function renderActionButtons() {
+            const container = document.getElementById('buttonList');
+            container.innerHTML = '';
+            actionButtons.forEach((btn, idx) => {
+                const valPlaceholder = btn.type === 'call' ? '+1234567890' : (btn.type === 'url' ? 'https://...' : 'Payload (Optional)');
+                const valDisplay = btn.type === 'reply' ? 'none' : 'block';
+                
+                container.innerHTML += `
+                    <div style="display:flex; gap:10px; align-items:center; background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">
+                        <select class="form-control" style="width:120px;" onchange="updateButtonData(${idx}, 'type', this.value)">
+                            <option value="reply" ${btn.type==='reply'?'selected':''}>Quick Reply</option>
+                            <option value="url" ${btn.type==='url'?'selected':''}>Link (URL)</option>
+                            <option value="call" ${btn.type==='call'?'selected':''}>Call</option>
+                        </select>
+                        <input type="text" class="form-control" placeholder="Button Text" value="${btn.text}" oninput="updateButtonData(${idx}, 'text', this.value)">
+                        <input type="text" class="form-control" style="display:${valDisplay}" placeholder="${valPlaceholder}" value="${btn.value}" oninput="updateButtonData(${idx}, 'value', this.value)">
+                        <button type="button" style="background:transparent; border:none; color:#ef4444; cursor:pointer; font-size:16px;" onclick="removeActionButton(${idx})">✖</button>
+                    </div>
+                `;
+            });
+            updateLivePreview();
+        }
+
+        function insertTag(tag) {
+            const el = document.getElementById('tplMessage');
+            const start = el.selectionStart; const end = el.selectionEnd;
+            const text = el.value;
+            const selectedText = text.substring(start, end);
+            const replace = tag + selectedText + tag;
+            el.value = text.substring(0, start) + replace + text.substring(end);
+            el.focus();
+            el.selectionStart = start + 1; el.selectionEnd = start + 1 + selectedText.length;
+            updateLivePreview();
+        }
+        function insertText(str) {
+            const el = document.getElementById('tplMessage');
+            const start = el.selectionStart;
+            el.value = el.value.substring(0, start) + str + el.value.substring(el.selectionEnd);
+            el.focus();
+            el.selectionEnd = start + str.length;
+            updateLivePreview();
+        }
+
+        async function saveTemplate(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveTplBtn');
+            btn.innerText = "Step 1/4: Checking auth..."; btn.disabled = true;
+
+            try {
+                // STEP 1: Get auth UID
+                let uid = null;
+                
+                // Wait up to 5s for Firebase auth to resolve
+                if (window.firebaseAuth) {
+                    if (window.firebaseAuth.currentUser) {
+                        uid = window.firebaseAuth.currentUser.uid;
+                    } else {
+                        // Wait for auth state to settle
+                        uid = await new Promise((resolve) => {
+                            const unsubscribe = window.firebaseOnAuthStateChanged(window.firebaseAuth, (u) => {
+                                unsubscribe();
+                                resolve(u ? u.uid : null);
+                            });
+                            setTimeout(() => resolve(null), 5000); // fallback after 5s
+                        });
+                    }
+                }
+                if (!uid && user) uid = user.uid || user.id;
+                if (!uid) throw new Error("Not logged in. Please refresh and log in again.");
+
+                btn.innerText = "Step 2/4: Reading form...";
+                const name = document.getElementById('tplName').value.trim();
+                const type = document.getElementById('tplType').value;
+                const message = document.getElementById('tplMessage').value;
+                const buttons = actionButtons;
+                const fileInput = document.getElementById('tplMedia');
+                
+                if (!name) throw new Error("Template name is required.");
+
+                let mediaPath = null;
+                let mediaName = null;
+
+                // Keep existing media if editing and no new file chosen
+                if (editingTemplateId) {
+                    const existing = allTemplatesCache.find(t => t.id === editingTemplateId);
+                    if (existing) {
+                        mediaPath = existing.mediaPath;
+                        mediaName = existing.mediaName;
+                    }
+                }
+
+                // STEP 3: Handle media (base64)
+                if (fileInput && fileInput.files && fileInput.files[0]) {
+                    btn.innerText = "Step 3/4: Reading file...";
+                    const file = fileInput.files[0];
+                    if (file.size > 800 * 1024) {
+                        throw new Error("File too large (max 800KB). Please compress the image first.");
+                    }
+                    mediaName = file.name;
+                    mediaPath = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = ev => resolve(ev.target.result);
+                        reader.onerror = () => reject(new Error("Could not read file."));
+                        reader.readAsDataURL(file);
+                    });
+                } else {
+                    btn.innerText = "Step 3/4: No file (skipping)...";
+                    await new Promise(r => setTimeout(r, 200)); // brief visual pause
+                }
+
+                // STEP 4: Save to Firestore
+                btn.innerText = "Step 4/4: Saving to DB...";
+
+                const templateData = {
+                    userId: uid,
+                    name, type, message, buttons, mediaPath, mediaName,
+                    updatedAt: new Date().toISOString()
+                };
+
+                const doSave = async () => {
+                    if (!window.firebaseDb) throw new Error("Firestore not initialized. Please refresh the page.");
+                    if (!editingTemplateId) {
+                        templateData.createdAt = new Date().toISOString();
+                        const newDocRef = window.fb.doc(window.fb.collection(window.firebaseDb, 'templates'));
+                        templateData.id = newDocRef.id;
+                        await window.fb.setDoc(newDocRef, templateData);
+                    } else {
+                        templateData.id = editingTemplateId;
+                        await window.fb.setDoc(
+                            window.fb.doc(window.firebaseDb, 'templates', editingTemplateId),
+                            templateData,
+                            { merge: true }
+                        );
+                    }
+                };
+
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error("Firestore timed out after 15s. Possible cause: Firebase Security Rules are blocking writes. Check your Firestore rules in Firebase Console.")), 15000)
+                );
+
+                await Promise.race([doSave(), timeoutPromise]);
+
+                showToast(editingTemplateId ? "✅ Template updated!" : "✅ Template saved!", "success");
+                hideTemplateEditor();
+                loadTemplates();
+
+            } catch(err) {
+                console.error("Save Template Error:", err);
+                // Use alert so it's definitely visible
+                alert("❌ Save Failed!\n\n" + (err.message || "Unknown error") + "\n\nCheck browser console (F12) for details.");
+            } finally {
+                btn.innerText = "💾 Save Template";
+                btn.disabled = false;
+            }
+        }
+
+
+        // Toast notification helper
+        function showToast(msg, type) {
+            let toast = document.getElementById('appToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'appToast';
+                toast.style.cssText = `
+                    position:fixed; bottom:30px; right:30px; z-index:9999;
+                    padding:14px 22px; border-radius:10px; font-size:15px;
+                    font-weight:600; color:#fff; box-shadow:0 4px 20px rgba(0,0,0,0.2);
+                    transition:opacity 0.4s ease; opacity:0; pointer-events:none;
+                `;
+                document.body.appendChild(toast);
+            }
+            toast.innerText = msg;
+            toast.style.backgroundColor = type === 'success' ? '#22c55e' : '#ef4444';
+            toast.style.opacity = '1';
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+        }
+
+
+        async function deleteTemplate(id, e) {
+            e.stopPropagation();
+            if(!confirm("Are you sure you want to delete this template?")) return;
+            try {
+                await window.fb.deleteDoc(window.fb.doc(window.firebaseDb, 'templates', id));
+                loadTemplates();
+            } catch(err) {
+                alert("Error deleting template");
+                console.error(err);
+            }
+        }
+
+        function editTemplate(id, e) {
+            e.stopPropagation();
+            const t = allTemplatesCache.find(t => t.id === id);
+            if(!t) return;
+            
+            editingTemplateId = t.id;
+            document.getElementById('tplName').value = t.name;
+            document.getElementById('tplType').value = t.type;
+            document.getElementById('tplMessage').value = t.message || '';
+            actionButtons = t.buttons || [];
+            
+            showTemplateEditor(true);
+            renderActionButtons();
+            updateLivePreview();
+            toggleMediaInput();
+            
+            if(t.mediaPath) {
+                if(t.type === 'image') { document.getElementById('liveMediaImg').src = t.mediaPath; document.getElementById('liveMediaImg').style.display = 'block'; }
+                if(t.type === 'video') { document.getElementById('liveMediaVid').src = t.mediaPath; document.getElementById('liveMediaVid').style.display = 'block'; }
+                if(t.type === 'document') { document.getElementById('docName').innerText = t.mediaName; document.getElementById('liveMediaDoc').style.display = 'flex'; }
+            }
+        }
+
+        async function loadTemplates() {
+            const grid = document.getElementById('templatesGrid');
+            if (grid) {
+                grid.innerHTML = `<div class="template-card create-template-card" onclick="showTemplateEditor()"><span>+</span>Create New Template</div>`;
+            }
+            try {
+                const uid = window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : (user.uid || user.id);
+                if (!uid) {
+                    console.error("User ID is missing, cannot load templates.");
+                    return;
+                }
+                const q = window.fb.query(window.fb.collection(window.firebaseDb, 'templates'), window.fb.where('userId', '==', uid));
+                const querySnapshot = await window.fb.getDocs(q);
+                const templates = querySnapshot.docs.map(doc => doc.data());
+                allTemplatesCache = templates;
+                
+                if (!grid) return;
+                
+                templates.forEach(t => {
+                    const typeColor = t.type === 'text' ? '#0284c7' : (t.type === 'image' ? '#16a34a' : (t.type === 'video' ? '#ea580c' : '#9333ea'));
+                    grid.innerHTML += `
+                        <div class="template-card">
+                            <span class="badge" style="color:${typeColor}; background:${typeColor}20">${t.type.toUpperCase()}</span>
+                            <div style="flex-grow:1; display:flex; flex-direction:column; gap:5px; overflow:hidden;">
+                                <h4>${t.name}</h4>
+                                <p>${t.message || 'No text content'}</p>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-outline" style="padding: 6px 12px; font-size: 13px;" onclick="editTemplate('${t.id}', event)">✏️ Edit</button>
+                                <button class="btn-outline" style="padding: 6px 12px; font-size: 13px; color:#ef4444; border-color:#fecaca;" onclick="deleteTemplate('${t.id}', event)">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch(err) {
+                console.error("Failed to load templates:", err);
+            }
+        }
+
+
+
+
+        // --- DASHBOARD STATS ---
+        async function fetchDashboardStats() {
+            try {
+                const res = await fetch('/api/dashboard-stats', { headers: { 'user-id': user.id }});
+                const data = await res.json();
+                
+                if (data.isAdmin) {
+                    document.getElementById('adminStatsContainer').style.display = 'block';
+                    document.getElementById('stTotalCustomers').innerText = data.adminStats.totalCustomers;
+                    document.getElementById('stActiveConnections').innerText = data.adminStats.activeConnections;
+                    document.getElementById('stExpiringSoon').innerText = data.adminStats.expiringSoon;
+                }
+
+                document.getElementById('stSent').innerText = data.myStats.sent || 0;
+                document.getElementById('stFailed').innerText = data.myStats.failed || 0;
+                document.getElementById('stReplies').innerText = data.myStats.replies || 0;
+            } catch(e) {
+                console.error("Failed to load stats", e);
+            }
+        }
+        
+        // Initial load
+        fetchDashboardStats();
+
+        // --- BULK MESSAGING ---
+        async function populateBulkTemplates() {
+            try {
+                const uid = window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : (user.uid || user.id);
+                const q = window.fb.query(window.fb.collection(window.firebaseDb, 'templates'), window.fb.where('userId', '==', uid));
+                const querySnapshot = await window.fb.getDocs(q);
+                const templates = querySnapshot.docs.map(doc => doc.data());
+                window.bulkTemplatesCache = templates;
+                
+                const select = document.getElementById('bulkTemplateSelect');
+                select.innerHTML = '<option value="">-- Write custom message below or pick a template --</option>';
+                
+                templates.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.innerText = t.name;
+                    select.appendChild(opt);
+                });
+            } catch(e) {
+                console.error("Failed to load templates", e);
+            }
+        }
+
+        function loadSelectedBulkTemplate() {
+            const select = document.getElementById('bulkTemplateSelect');
+            const textarea = document.getElementById('bulkMessage');
+            if (select.value && window.bulkTemplatesCache) {
+                const tmpl = window.bulkTemplatesCache.find(t => t.id === select.value);
+                if (tmpl) textarea.value = tmpl.body;
+            }
+        }
+
+        function downloadSampleCsv() {
+            const csvContent = "data:text/csv;charset=utf-8,Phone,Name,Amount\n919876543210,Rahul Sharma,500\n919876543211,Amit Kumar,1200\n";
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "sample_bulk_campaign.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function startBulkCampaign(event) {
+            event.preventDefault();
+            const btn = document.getElementById('bulkSendBtn');
+            const statusBox = document.getElementById('bulkStatusBox');
+            const message = document.getElementById('bulkMessage').value;
+            const fileInput = document.getElementById('bulkCsvFile');
+
+            if (fileInput.files.length === 0) return alert('Please select a CSV file.');
+
+            btn.innerText = 'Uploading...';
+            btn.disabled = true;
+            statusBox.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('csvFile', fileInput.files[0]);
+            formData.append('message', message);
+
+            try {
+                const res = await fetch('/api/bulk-send', {
+                    method: 'POST',
+                    headers: { 'user-id': user.id },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    statusBox.style.display = 'block';
+                    document.getElementById('bulkSendForm').reset();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Failed to send campaign.');
+            }
+
+            btn.innerText = '🚀 Start Bulk Campaign';
+            btn.disabled = false;
+        }
+
+        // --- CONTACTS & CRM ---
+        let globalContacts = [];
+
+        async function loadContacts() {
+            try {
+                const uid = window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : (user.uid || user.id);
+                const q = window.fb.query(window.fb.collection(window.firebaseDb, 'contacts'), window.fb.where('userId', '==', uid));
+                const querySnapshot = await window.fb.getDocs(q);
+                globalContacts = querySnapshot.docs.map(doc => doc.data());
+                renderContactsTable();
+                updateExportCategories();
+            } catch (err) { console.error('Failed to load contacts'); }
+        }
+
+        function renderContactsTable() {
+            const tbody = document.getElementById('contactsTableBody');
+            tbody.innerHTML = '';
+            if (globalContacts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">No contacts found. Add one or import a CSV.</td></tr>';
+                return;
+            }
+            globalContacts.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${c.name}</td>
+                    <td>${c.phone}</td>
+                    <td><span style="background:#e2e8f0; padding:2px 8px; border-radius:12px; font-size:12px;">${c.tag || '-'}</span></td>
+                    <td>
+                        <button class="btn-outline" style="color:#ef4444; border-color:#ef4444; padding:4px 8px; font-size:12px;" onclick="deleteContact('${c.id}')">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateExportCategories() {
+            const select = document.getElementById('exportCategorySelect');
+            select.innerHTML = '<option value="All">All Categories</option>';
+            const tags = [...new Set(globalContacts.map(c => c.tag).filter(t => t))];
+            tags.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t; opt.innerText = t;
+                select.appendChild(opt);
+            });
+        }
+
+        async function addContact(e) {
+            e.preventDefault();
+            const uid = window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : (user.uid || user.id);
+            const newDocRef = window.fb.doc(window.fb.collection(window.firebaseDb, 'contacts'));
+            const payload = {
+                id: newDocRef.id,
+                userId: uid,
+                name: document.getElementById('contactName').value,
+                phone: document.getElementById('contactPhone').value,
+                tag: document.getElementById('contactTag').value
+            };
+            try {
+                await window.fb.setDoc(newDocRef, payload);
+                document.getElementById('addContactForm').reset();
+                loadContacts();
+            } catch (err) { alert('Failed to add contact'); }
+        }
+
+        async function deleteContact(id) {
+            if(!confirm('Delete this contact?')) return;
+            try {
+                await window.fb.deleteDoc(window.fb.doc(window.firebaseDb, 'contacts', id));
+                loadContacts();
+            } catch (err) { alert('Failed to delete contact'); }
+        }
+
+        async function importContacts(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('importCsvInput').value = ''; // reset
+            try {
+                const text = await file.text();
+                const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                if (lines.length <= 1) return alert('File is empty or missing headers');
+                
+                const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('number') || h.includes('mobile'));
+                if (phoneIdx === -1) return alert('Could not find a phone/number column in CSV');
+                
+                const nameIdx = headers.findIndex(h => h.includes('name'));
+                const tagIdx = headers.findIndex(h => h.includes('tag') || h.includes('category'));
+
+                const uid = window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : (user.uid || user.id);
+                let importedCount = 0;
+                for(let i = 1; i < lines.length; i++) {
+                    const row = lines[i].split(',').map(c => c.trim());
+                    const phoneRaw = row[phoneIdx] ? row[phoneIdx].replace(/[^0-9]/g, '') : '';
+                    if (!phoneRaw) continue;
+
+                    const newDocRef = window.fb.doc(window.fb.collection(window.firebaseDb, 'contacts'));
+                    await window.fb.setDoc(newDocRef, {
+                        id: newDocRef.id,
+                        userId: uid,
+                        name: (nameIdx !== -1 && row[nameIdx]) ? row[nameIdx] : 'Unknown',
+                        phone: phoneRaw,
+                        tag: (tagIdx !== -1 && row[tagIdx]) ? row[tagIdx] : 'Imported'
+                    });
+                    importedCount++;
+                }
+                alert(`Successfully imported ${importedCount} contacts!`);
+                loadContacts();
+            } catch (err) { 
+                alert('Import failed.');
+                console.error(err);
+            }
+        }
+
+        function exportContacts() {
+            const category = document.getElementById('exportCategorySelect').value;
+            let filtered = globalContacts;
+            if (category !== 'All') {
+                filtered = globalContacts.filter(c => c.tag === category);
+            }
+            if (filtered.length === 0) return alert('No contacts to export in this category.');
+
+            let csv = 'Name,Phone,Category\n';
+            filtered.forEach(c => {
+                csv += `"${c.name}","${c.phone}","${c.tag || ''}"\n`;
+            });
+
+            const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csv);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `contacts_export_${category}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- SCHEDULED MESSAGES ---
+        async function loadSchedules() {
+            try {
+                const uid = window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : (user.uid || user.id);
+                const q = window.fb.query(window.fb.collection(window.firebaseDb, 'schedules'), window.fb.where('userId', '==', uid));
+                const querySnapshot = await window.fb.getDocs(q);
+                const schedules = querySnapshot.docs.map(doc => doc.data());
+                const tbody = document.getElementById('schedulesTableBody');
+                tbody.innerHTML = '';
+                if (schedules.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">No scheduled messages found.</td></tr>';
+                    return;
+                }
+                
+                // sort by date descending
+                schedules.sort((a,b) => new Date(b.sendAt) - new Date(a.sendAt));
+                
+                schedules.forEach(s => {
+                    const tr = document.createElement('tr');
+                    const d = new Date(s.sendAt);
+                    let statusColor = s.status === 'Completed' ? '#10b981' : s.status === 'Pending' ? '#f59e0b' : '#ef4444';
+                    
+                    let targetText = s.targetType === 'single' ? s.targetValue : s.targetType === 'crm' ? 'CRM: ' + s.targetValue : 'CSV Upload';
+                    
+                    tr.innerHTML = `
+                        <td>${d.toLocaleDateString()} ${d.toLocaleTimeString()}</td>
+                        <td>${targetText}</td>
+                        <td><strong style="color:${statusColor}">${s.status}</strong></td>
+                        <td>
+                            ${s.status === 'Pending' ? `<button class="btn-outline" style="color:#ef4444; border-color:#ef4444; padding:4px 8px; font-size:12px;" onclick="deleteSchedule('${s.id}')">Cancel</button>` : '-'}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) { console.error('Failed to load schedules'); }
+        }
+
+        async function populateSchedOptions() {
+            // Load templates
+            try {
+                const uid = window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : (user.uid || user.id);
+                const q = window.fb.query(window.fb.collection(window.firebaseDb, 'templates'), window.fb.where('userId', '==', uid));
+                const querySnapshot = await window.fb.getDocs(q);
+                const templates = querySnapshot.docs.map(doc => doc.data());
+                const selT = document.getElementById('schedTemplateSelect');
+                selT.innerHTML = '<option value="">-- Select Template --</option>';
+                templates.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id; opt.innerText = t.name;
+                    selT.appendChild(opt);
+                });
+            } catch(e) {}
+            
+            // Load CRM Categories
+            try {
+                const selC = document.getElementById('schedCrmCategory');
+                selC.innerHTML = '<option value="All">All Saved Contacts</option>';
+                if (globalContacts && globalContacts.length > 0) {
+                    const tags = [...new Set(globalContacts.map(c => c.tag).filter(t => t))];
+                    tags.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t; opt.innerText = t;
+                        selC.appendChild(opt);
+                    });
+                }
+            } catch(e) {}
+        }
+
+        function toggleSchedTargetInputs() {
+            const val = document.getElementById('schedTargetType').value;
+            document.getElementById('schedTargetSingle').style.display = val === 'single' ? 'block' : 'none';
+            document.getElementById('schedTargetCrm').style.display = val === 'crm' ? 'block' : 'none';
+            document.getElementById('schedTargetCsv').style.display = val === 'csv' ? 'block' : 'none';
+        }
+
+        async function createSchedule(e) {
+            e.preventDefault();
+            const uid = window.firebaseAuth.currentUser ? window.firebaseAuth.currentUser.uid : (user.uid || user.id);
+            
+            const payload = {
+                userId: uid,
+                templateId: document.getElementById('schedTemplateSelect').value,
+                sendAt: new Date(document.getElementById('schedDate').value + 'T' + document.getElementById('schedTime').value).toISOString(),
+                targetType: document.getElementById('schedTargetType').value,
+                status: 'Pending',
+                createdAt: new Date().toISOString()
+            };
+            
+            if (payload.targetType === 'single') {
+                const phone = document.getElementById('schedPhone').value;
+                if(!phone) return alert("Enter phone number");
+                payload.targetValue = phone;
+            } else if (payload.targetType === 'crm') {
+                payload.targetValue = document.getElementById('schedCrmCategory').value;
+            } else if (payload.targetType === 'csv') {
+                const fileInput = document.getElementById('schedCsvFile');
+                if(!fileInput.files.length) return alert("Select a CSV file");
+                
+                const file = fileInput.files[0];
+                const text = await file.text();
+                const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                if (lines.length <= 1) return alert('CSV is empty');
+                
+                const headers = lines[0].split(',').map(h => h.trim());
+                payload.csvData = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',');
+                    let row = {};
+                    headers.forEach((h, idx) => row[h] = values[idx] ? values[idx].trim() : '');
+                    payload.csvData.push(row);
+                }
+            }
+            
+            const btn = document.getElementById('schedBtn');
+            btn.disabled = true; btn.innerText = "Scheduling...";
+            
+            try {
+                const newDocRef = window.fb.doc(window.fb.collection(window.firebaseDb, 'schedules'));
+                payload.id = newDocRef.id;
+                await window.fb.setDoc(newDocRef, payload);
+                alert("Message Scheduled Successfully!");
+                document.getElementById('scheduleForm').reset();
+                toggleSchedTargetInputs();
+                loadSchedules();
+            } catch (err) { 
+                alert("Failed to schedule");
+                console.error(err);
+            }
+            
+            btn.disabled = false; btn.innerText = "⏰ Schedule Message";
+        }
+
+        async function deleteSchedule(id) {
+            if(!confirm("Cancel this scheduled message?")) return;
+            try {
+                await window.fb.deleteDoc(window.fb.doc(window.firebaseDb, 'schedules', id));
+                loadSchedules();
+            } catch(e) { console.error(e); }
+        }
+
+        // --- WHATSAPP GROUP SCRAPER ---
+        let currentScrapedData = [];
+        let currentGroupName = '';
+
+        async function loadScraperGroups() {
+            const btn = document.getElementById('btnLoadGroups');
+            btn.innerText = "Loading..."; btn.disabled = true;
+            try {
+                const res = await fetch('/api/scraper/groups', { headers: { 'user-id': user.id } });
+                const data = await res.json();
+                if (data.success) {
+                    const sel = document.getElementById('scraperGroupSelect');
+                    sel.innerHTML = '';
+                    if (data.groups.length === 0) {
+                        alert("No WhatsApp groups found on this number.");
+                    } else {
+                        data.groups.forEach(g => {
+                            const opt = document.createElement('option');
+                            opt.value = g.id; opt.innerText = g.name;
+                            sel.appendChild(opt);
+                        });
+                        document.getElementById('scraperGroupSelection').style.display = 'block';
+                    }
+                } else {
+                    alert(data.error || "Failed to load groups. Is WhatsApp connected?");
+                }
+            } catch(err) {
+                alert("Error connecting to server.");
+            }
+            btn.innerText = "🔄 Load My Groups"; btn.disabled = false;
+        }
+
+        async function scrapeSelectedGroup() {
+            const sel = document.getElementById('scraperGroupSelect');
+            const groupId = sel.value;
+            currentGroupName = sel.options[sel.selectedIndex].text;
+            if (!groupId) return;
+
+            const btn = document.getElementById('btnScrapeGroup');
+            btn.innerText = "Scraping..."; btn.disabled = true;
+            
+            try {
+                const res = await fetch(`/api/scraper/groups/${groupId}/participants`, { headers: { 'user-id': user.id } });
+                const data = await res.json();
+                if (data.success) {
+                    currentScrapedData = data.participants;
+                    document.getElementById('scrapeCount').innerText = currentScrapedData.length;
+                    
+                    const tbody = document.getElementById('scraperTableBody');
+                    tbody.innerHTML = '';
+                    currentScrapedData.forEach(p => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${p.phone}</td><td>${p.name}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                    
+                    document.getElementById('scraperResultsCard').style.display = 'block';
+                } else {
+                    alert(data.error || "Failed to scrape group.");
+                }
+            } catch(e) {
+                alert("Error scraping group.");
+            }
+            btn.innerText = "🔍 Scrape Numbers"; btn.disabled = false;
+        }
+
+        function exportScrapedCsv() {
+            if(currentScrapedData.length === 0) return;
+            let csv = "Phone,Name\n";
+            currentScrapedData.forEach(p => {
+                csv += `"${p.phone}","${p.name}"\n`;
+            });
+            const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csv);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Scraped_${currentGroupName.replace(/[^a-zA-Z0-9]/g, '_')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function saveScrapedToCrm() {
+            if(currentScrapedData.length === 0) return;
+            const tagName = prompt("Enter a tag/category name for these contacts:", currentGroupName);
+            if (!tagName) return;
+
+            let successCount = 0;
+            for(let p of currentScrapedData) {
+                if(p.phone.includes('-')) continue; 
+                try {
+                    const newDocRef = window.fb.doc(window.fb.collection(window.firebaseDb, 'contacts'));
+                    await window.fb.setDoc(newDocRef, {
+                        id: newDocRef.id,
+                        userId: user.id,
+                        name: p.name,
+                        phone: p.phone,
+                        tag: tagName
+                    });
+                    successCount++;
+                } catch(e) {}
+            }
+            alert(`Saved ${successCount} contacts to CRM under category "${tagName}"!`);
+            loadContacts();
+        }
+
+        // --- LIVE CHAT INBOX ---
+        let activeChatId = null;
+
+        async function loadConversations() {
+            const list = document.getElementById('chatList');
+            list.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">Loading...</div>';
+            try {
+                const res = await fetch('/api/chat/conversations', { headers: { 'user-id': user.id } });
+                const data = await res.json();
+                if (data.success) {
+                    list.innerHTML = '';
+                    data.chats.forEach(chat => {
+                        const div = document.createElement('div');
+                        div.className = 'chat-item';
+                        div.id = 'chat-item-' + chat.id;
+                        div.onclick = () => loadMessages(chat.id, chat.name);
+                        
+                        const timeStr = new Date(chat.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        const groupBadge = chat.isGroup ? '<span style="font-size:10px; background:#e2e8f0; padding:2px 4px; border-radius:4px; margin-left:5px;">Group</span>' : '';
+                        
+                        div.innerHTML = `
+                            <div class="chat-item-name">${chat.name} ${groupBadge} <span style="font-size:11px; color:#94a3b8; font-weight:normal;">${timeStr}</span></div>
+                            <div class="chat-item-msg">${chat.lastMessage || 'Media message'}</div>
+                        `;
+                        list.appendChild(div);
+                    });
+                }
+            } catch(e) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">Failed to load chats</div>';
+            }
+        }
+
+        async function loadMessages(chatId, chatName) {
+            activeChatId = chatId;
+            document.getElementById('activeChatName').innerText = chatName;
+            document.getElementById('chatInputArea').style.display = 'flex';
+            
+            // Highlight active in sidebar
+            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+            const activeItem = document.getElementById('chat-item-' + chatId);
+            if(activeItem) activeItem.classList.add('active');
+
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = '<div style="margin: auto; color: #64748b;">Loading messages...</div>';
+
+            try {
+                const res = await fetch(`/api/chat/messages/${chatId}`, { headers: { 'user-id': user.id } });
+                const data = await res.json();
+                if (data.success) {
+                    container.innerHTML = '';
+                    data.messages.reverse().forEach(msg => {
+                        appendMessageUI(msg);
+                    });
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch(e) {
+                container.innerHTML = '<div style="margin: auto; color: #ef4444;">Failed to load messages</div>';
+            }
+        }
+
+        function appendMessageUI(msg) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = `msg-bubble ${msg.fromMe ? 'sent' : 'received'}`;
+            
+            const timeStr = new Date(msg.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            let content = msg.body;
+            if (msg.hasMedia && !msg.body) content = "📷 Media Message";
+            
+            div.innerHTML = `${content} <span class="msg-time">${timeStr}</span>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text || !activeChatId) return;
+
+            input.value = '';
+            // Optimistically add to UI
+            appendMessageUI({ body: text, fromMe: true, timestamp: Math.floor(Date.now()/1000) });
+
+            try {
+                await fetch('/api/chat/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'user-id': user.id },
+                    body: JSON.stringify({ chatId: activeChatId, message: text })
+                });
+                // Optionally reload to get proper status or rely on success
+            } catch(e) {
+                alert("Failed to send message");
+            }
+        }
+
+        // View switching logic override to load conversations automatically
+        const originalSwitchView = switchView;
+        switchView = function(viewId) {
+            originalSwitchView(viewId);
+            if(viewId === 'livechat') {
+                loadConversations();
+            }
+        };
+
+    </script>
+</body>
+</html>
