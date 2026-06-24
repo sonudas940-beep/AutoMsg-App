@@ -5,9 +5,10 @@ async function useFirebaseAuthState(db, userId) {
 
     const writeData = async (data, id) => {
         try {
+            const safeId = encodeURIComponent(id);
             const dataString = JSON.stringify(data, BufferJSON.replacer);
             const dataObj = JSON.parse(dataString);
-            await sessionRef.collection('keys').doc(id).set(dataObj);
+            await sessionRef.collection('keys').doc(safeId).set(dataObj);
         } catch (error) {
             console.error('Error writing auth data to Firebase:', error);
         }
@@ -15,7 +16,8 @@ async function useFirebaseAuthState(db, userId) {
 
     const readData = async (id) => {
         try {
-            const doc = await sessionRef.collection('keys').doc(id).get();
+            const safeId = encodeURIComponent(id);
+            const doc = await sessionRef.collection('keys').doc(safeId).get();
             if (doc.exists) {
                 const dataObj = doc.data();
                 const dataString = JSON.stringify(dataObj);
@@ -30,7 +32,8 @@ async function useFirebaseAuthState(db, userId) {
 
     const removeData = async (id) => {
         try {
-            await sessionRef.collection('keys').doc(id).delete();
+            const safeId = encodeURIComponent(id);
+            await sessionRef.collection('keys').doc(safeId).delete();
         } catch (error) {
             console.error('Error removing auth data from Firebase:', error);
         }
