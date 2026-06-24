@@ -1907,7 +1907,7 @@
             const textarea = document.getElementById('bulkMessage');
             if (select.value && window.bulkTemplatesCache) {
                 const tmpl = window.bulkTemplatesCache.find(t => t.id === select.value);
-                if (tmpl) textarea.value = tmpl.body;
+                if (tmpl) textarea.value = tmpl.message || '';
             }
         }
 
@@ -1938,6 +1938,10 @@
             const formData = new FormData();
             formData.append('csvFile', fileInput.files[0]);
             formData.append('message', message);
+            const select = document.getElementById('bulkTemplateSelect');
+            if (select.value) {
+                formData.append('templateId', select.value);
+            }
 
             try {
                 const res = await fetch('/api/bulk-send', {
