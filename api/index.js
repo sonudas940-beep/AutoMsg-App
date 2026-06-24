@@ -1,6 +1,6 @@
 const express = require('express');
 const { initializeApp, cert, getApps } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 const dotenv = require('dotenv');
 const multer = require('multer');
@@ -121,11 +121,23 @@ app.post('/api/bulk-send', upload.single('csvFile'), async (req, res) => {
         // Extract phone numbers (support "Phone" or "Number" column, case-insensitive)
         const phones = [];
         for (const row of rows) {
-            const key = Object.keys(row).find(k =>
-                k.toLowerCase() === 'phone' || k.toLowerCase() === 'number'
-            );
+            const key = Object.keys(row).find(k => {
+                const cleanKey = k.trim().toLowerCase();
+                return cleanKey === 'phone' || cleanKey === 'number';
+            });
+            const codeKey = Object.keys(row).find(k => k.trim() === '91' || k.trim().toLowerCase() === 'countrycode' || k.trim().toLowerCase() === 'country code');
+            
             if (key && row[key]) {
-                const num = String(row[key]).replace(/\D/g, '');
+                let num = String(row[key]).replace(/\D/g, '');
+                let code = (codeKey && row[codeKey]) ? String(row[codeKey]).replace(/\D/g, '') : '';
+                
+                // Prepend country code if missing
+                if (code && !num.startsWith(code)) {
+                    num = code + num;
+                } else if (num.length === 10) {
+                    num = '91' + num; // default to India
+                }
+                
                 if (num.length >= 10) phones.push({ number: num, name: row['Name'] || row['name'] || '' });
             }
         }
@@ -144,6 +156,17 @@ app.post('/api/bulk-send', upload.single('csvFile'), async (req, res) => {
 
         // Respond immediately so client doesn't timeout
         res.json({ success: true, message: `Campaign started! Sending to ${phones.length} contacts.`, total: phones.length });
+
+        // Update uploaded stats initially
+        try {
+            const statsRef = db.collection('stats').doc(userId);
+            await statsRef.set({
+                uploaded: FieldValue.increment(phones.length),
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+        } catch (err) {
+            console.error('Failed to update uploaded stats:', err.message);
+        }
 
         // Process in background with anti-ban delay (3-5 seconds)
         let sent = 0, failed = 0;
@@ -166,8 +189,8 @@ app.post('/api/bulk-send', upload.single('csvFile'), async (req, res) => {
             const statsDoc = await statsRef.get();
             const existing = statsDoc.exists ? statsDoc.data() : { sent: 0, failed: 0 };
             await statsRef.set({
-                sent: (existing.sent || 0) + sent,
-                failed: (existing.failed || 0) + failed,
+                sent: FieldValue.increment(sent),
+                failed: FieldValue.increment(failed),
                 updatedAt: new Date().toISOString()
             }, { merge: true });
         } catch (statsErr) {
@@ -224,7 +247,20 @@ app.post('/api/chat/send', async (req, res) => {
 app.get('/api/chat/conversations', (req, res) => res.json({ success: true, chats: [] }));
 app.get('/api/chat/messages/:id', (req, res) => res.json({ success: true, messages: [] }));
 app.get('/api/scraper/groups', (req, res) => res.json({ success: true, groups: [] }));
-app.get('/api/dashboard-stats', (req, res) => res.json({ isAdmin: false, myStats: { sent: 0, failed: 0, replies: 0 } }));
+app.get('/api/dashboard-stats', async (req, res) => {
+    const userId = req.headers['user-id'];
+    if (!userId) return res.json({ isAdmin: false, myStats: {} });
+    try {
+        const statsDoc = await db.collection('stats').doc(userId).get();
+        if (statsDoc.exists) {
+            res.json({ isAdmin: false, myStats: statsDoc.data() });
+        } else {
+            res.json({ isAdmin: false, myStats: {} });
+        }
+    } catch(err) {
+        res.json({ isAdmin: false, myStats: {} });
+    }
+});
 
 // Ping endpoint to keep server awake
 app.get('/api/ping', (req, res) => {

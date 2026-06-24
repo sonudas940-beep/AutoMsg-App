@@ -1,5 +1,6 @@
 const { default: makeWASocket, DisconnectReason } = require('@whiskeysockets/baileys');
 const { useFirebaseAuthState } = require('./firebaseAuthState');
+const { FieldValue } = require('firebase-admin/firestore');
 const qrcode = require('qrcode');
 const pino = require('pino');
 
@@ -59,11 +60,33 @@ async function startWhatsAppSession(userId, db) {
         }
     });
 
-    // Handle incoming messages for Chatbot
+    // Track Message Receipts (Delivered & Read)
+    sock.ev.on('messages.update', async (updates) => {
+        try {
+            let delivered = 0;
+            let read = 0;
+            for (const { update } of updates) {
+                if (update.status === 3) delivered++; // DELIVERY_ACK
+                if (update.status === 4) read++; // READ
+            }
+            if (delivered > 0 || read > 0) {
+                const updatesObj = {};
+                if (delivered > 0) updatesObj.delivered = FieldValue.increment(delivered);
+                if (read > 0) updatesObj.read = FieldValue.increment(read);
+                await db.collection('stats').doc(userId).set(updatesObj, { merge: true });
+            }
+        } catch (err) {
+            console.error('Failed to update receipt stats:', err);
+        }
+    });
+
+    // Handle incoming messages for Chatbot and Replies
     sock.ev.on('messages.upsert', async (m) => {
         if (m.type === 'notify') {
+            let newReplies = 0;
             for (const msg of m.messages) {
                 if (!msg.key.fromMe && msg.message) {
+                    newReplies++;
                     const textMessage = msg.message.conversation || msg.message.extendedTextMessage?.text;
                     const from = msg.key.remoteJid;
                     
@@ -82,6 +105,13 @@ async function startWhatsAppSession(userId, db) {
                         }
                     }
                 }
+            }
+            if (newReplies > 0) {
+                try {
+                    await db.collection('stats').doc(userId).set({
+                        replies: FieldValue.increment(newReplies)
+                    }, { merge: true });
+                } catch (err) {}
             }
         }
     });
