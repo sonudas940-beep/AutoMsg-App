@@ -112,7 +112,20 @@ app.post('/api/bulk-send', upload.single('csvFile'), async (req, res) => {
 
     try {
         const message = req.body.message || '';
-        if (!message.trim()) return res.status(400).json({ error: 'Message is empty' });
+        const templateId = req.body.templateId;
+        if (!message.trim() && !templateId) return res.status(400).json({ error: 'Message is empty' });
+
+        let templateData = null;
+        if (templateId) {
+            try {
+                const tplDoc = await db.collection('templates').doc(userId).collection('userTemplates').doc(templateId).get();
+                if (tplDoc.exists) {
+                    templateData = tplDoc.data();
+                }
+            } catch(e) {
+                console.error("Failed to fetch template:", e);
+            }
+        }
 
         // Parse CSV
         const rows = await parseCsvBuffer(req.file.buffer);
@@ -172,8 +185,15 @@ app.post('/api/bulk-send', upload.single('csvFile'), async (req, res) => {
         let sent = 0, failed = 0;
         for (const contact of phones) {
             try {
-                const personalizedMsg = message.replace(/\{\{name\}\}/gi, contact.name || 'Friend');
-                await sendWhatsAppMessage(userId, contact.number, personalizedMsg);
+                let currentTemplate = templateData ? { ...templateData } : null;
+                let personalizedMsg = message.replace(/\{\{name\}\}/gi, contact.name || 'Friend');
+                
+                if (currentTemplate && currentTemplate.message) {
+                    currentTemplate.message = currentTemplate.message.replace(/\{\{name\}\}/gi, contact.name || 'Friend');
+                    personalizedMsg = currentTemplate.message; // Use template message as fallback
+                }
+                
+                await sendWhatsAppMessage(userId, contact.number, personalizedMsg, currentTemplate);
                 sent++;
             } catch (err) {
                 console.error(`Failed to send to ${contact.number}:`, err.message);

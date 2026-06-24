@@ -126,14 +126,42 @@ async function getSessionStatus(userId) {
     };
 }
 
-async function sendWhatsAppMessage(userId, to, message) {
+async function sendWhatsAppMessage(userId, to, message, templateData = null) {
     const sock = sessions.get(userId);
     if (!sock || connectionStates.get(userId) !== 'open') {
         throw new Error('WhatsApp is not connected. Please scan QR code first.');
     }
     // Baileys needs the number in format 1234567890@s.whatsapp.net
     const formattedTo = to.includes('@s.whatsapp.net') ? to : `${to}@s.whatsapp.net`;
-    await sock.sendMessage(formattedTo, { text: message });
+    
+    if (templateData) {
+        let payload = { text: templateData.message || message };
+        const msgText = templateData.message || message || '';
+        
+        if (templateData.type === 'image' && templateData.mediaUrl) {
+            payload = { image: { url: templateData.mediaUrl }, caption: msgText };
+        } else if (templateData.type === 'video' && templateData.mediaUrl) {
+            payload = { video: { url: templateData.mediaUrl }, caption: msgText };
+        } else if (templateData.type === 'document' && templateData.mediaUrl) {
+            payload = { document: { url: templateData.mediaUrl }, mimetype: 'application/pdf', fileName: 'Document.pdf', caption: msgText };
+        }
+        
+        // Add Button fallbacks as text
+        if (templateData.buttons && templateData.buttons.length > 0) {
+            let btnText = "\n\n";
+            templateData.buttons.forEach(b => {
+                if (b.type === 'url') btnText += `🔗 ${b.text}: ${b.value}\n`;
+                else if (b.type === 'call') btnText += `📞 ${b.text}: ${b.value}\n`;
+                else btnText += `▶️ ${b.text}\n`;
+            });
+            if (payload.text) payload.text += btnText;
+            if (payload.caption) payload.caption += btnText;
+        }
+
+        await sock.sendMessage(formattedTo, payload);
+    } else {
+        await sock.sendMessage(formattedTo, { text: message });
+    }
 }
 
 async function logoutWhatsApp(userId) {
