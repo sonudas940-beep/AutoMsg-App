@@ -311,18 +311,53 @@
                     </div>
                 </div>
 
-                <!-- PERSONAL STATS -->
+                <!-- MARKETING ANALYTICS DASHBOARD -->
                 <div id="customerStatsContainer">
-                    <h3 style="margin-top: 0; margin-bottom: 20px; color: #0f172a;">My WhatsApp Campaign</h3>
-                    <div class="stats-grid">
-                        <div class="stat-box"><p>Messages Sent</p><h2 id="stSent" style="color: #0284c7;">0</h2></div>
-                        <div class="stat-box"><p>Messages Failed</p><h2 id="stFailed" style="color: #ef4444;">0</h2></div>
-                        <div class="stat-box"><p>Replies Received</p><h2 id="stReplies" style="color: #22c55e;">0</h2></div>
-                        <div class="stat-box" style="display:flex; flex-direction:column; justify-content:center; align-items:center;">
-                            <p style="margin-bottom: 10px;">Meta Cloud API</p>
-                            <h2 id="linkedNumber" style="font-size: 16px; line-height: 1.5; color: #64748b; display:none;">Not Configured</h2>
-                            <button class="btn" style="padding: 8px 16px; font-size: 14px;" onclick="switchView('settings')">Configure API</button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; color: #0f172a;">Campaign Insights</h3>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-outline" style="padding:6px 12px; font-size:14px;" onclick="loadDashboardStats()">🔄 Refresh</button>
                         </div>
+                    </div>
+                    
+                    <div class="analytics-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="stat-box" style="border-left: 4px solid #3b82f6;">
+                            <p style="color:#64748b; margin-bottom:5px;">Uploaded Recipients</p>
+                            <h2 id="stUploaded" style="color:#0f172a; margin:0;">0</h2>
+                        </div>
+                        <div class="stat-box" style="border-left: 4px solid #e2e8f0;">
+                            <p style="color:#64748b; margin-bottom:5px;">Successful Count</p>
+                            <h2 id="stSent" style="color:#0f172a; margin:0;">0</h2>
+                        </div>
+                        <div class="stat-box" style="border-left: 4px solid #10b981;">
+                            <p style="color:#64748b; margin-bottom:5px;">Failed Count</p>
+                            <h2 id="stFailed" style="color:#0f172a; margin:0;">0</h2>
+                        </div>
+                        <div class="stat-box" style="border-left: 4px solid #f59e0b;">
+                            <p style="color:#64748b; margin-bottom:5px;">Delivered Count</p>
+                            <h2 id="stDelivered" style="color:#0f172a; margin:0;">0</h2>
+                        </div>
+                        <div class="stat-box" style="border-left: 4px solid #ef4444;">
+                            <p style="color:#64748b; margin-bottom:5px;">Read Count</p>
+                            <h2 id="stRead" style="color:#0f172a; margin:0;">0</h2>
+                        </div>
+                        <div class="stat-box" style="border-left: 4px solid #f97316;">
+                            <p style="color:#64748b; margin-bottom:5px;">Reply Count</p>
+                            <h2 id="stReplies" style="color:#0f172a; margin:0;">0</h2>
+                        </div>
+                        <div class="stat-box" style="border-left: 4px solid #8b5cf6;">
+                            <p style="color:#64748b; margin-bottom:5px;">Click Count</p>
+                            <h2 id="stClicks" style="color:#0f172a; margin:0;">0</h2>
+                        </div>
+                        <div class="stat-box" style="border-left: 4px solid #cbd5e1;">
+                            <p style="color:#64748b; margin-bottom:5px;">Unknown Error</p>
+                            <h2 id="stUnknown" style="color:#0f172a; margin:0;">0</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-box" style="width: 200px; border-left: 4px solid #94a3b8;">
+                        <p style="color:#64748b; margin-bottom:5px;">Successful Rate</p>
+                        <h2 id="stRate" style="color:#0f172a; margin:0;">0.00%</h2>
                     </div>
                 </div>
             </div>
@@ -1822,9 +1857,20 @@
                     document.getElementById('stExpiringSoon').innerText = data.adminStats.expiringSoon;
                 }
 
-                document.getElementById('stSent').innerText = data.myStats.sent || 0;
-                document.getElementById('stFailed').innerText = data.myStats.failed || 0;
-                document.getElementById('stReplies').innerText = data.myStats.replies || 0;
+                if (!data.isAdmin) {
+                    const st = data.myStats || {};
+                    document.getElementById('stSent').innerText = st.sent || 0;
+                    document.getElementById('stFailed').innerText = st.failed || 0;
+                    document.getElementById('stReplies').innerText = st.replies || 0;
+                    document.getElementById('stUploaded').innerText = st.uploaded || 0;
+                    document.getElementById('stDelivered').innerText = st.delivered || 0;
+                    document.getElementById('stRead').innerText = st.read || 0;
+                    
+                    const sent = st.sent || 0;
+                    const uploaded = st.uploaded || 0;
+                    const rate = uploaded > 0 ? ((sent / uploaded) * 100).toFixed(2) : '0.00';
+                    document.getElementById('stRate').innerText = rate + '%';
+                }
             } catch(e) {
                 console.error("Failed to load stats", e);
             }
