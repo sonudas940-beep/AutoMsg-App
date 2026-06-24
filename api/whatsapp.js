@@ -138,22 +138,28 @@ async function sendWhatsAppMessage(userId, to, message, templateData = null) {
         let payload = { text: templateData.message || message };
         const msgText = templateData.message || message || '';
         
-        if (templateData.type === 'image' && templateData.mediaUrl) {
-            payload = { image: { url: templateData.mediaUrl }, caption: msgText };
-        } else if (templateData.type === 'video' && templateData.mediaUrl) {
-            payload = { video: { url: templateData.mediaUrl }, caption: msgText };
-        } else if (templateData.type === 'document' && templateData.mediaUrl) {
-            payload = { document: { url: templateData.mediaUrl }, mimetype: 'application/pdf', fileName: 'Document.pdf', caption: msgText };
+        if (templateData.type === 'image' && templateData.mediaPath) {
+            payload = { image: { url: templateData.mediaPath }, caption: msgText };
+        } else if (templateData.type === 'video' && templateData.mediaPath) {
+            payload = { video: { url: templateData.mediaPath }, caption: msgText };
+        } else if (templateData.type === 'document' && templateData.mediaPath) {
+            payload = { document: { url: templateData.mediaPath }, mimetype: 'application/pdf', fileName: 'Document.pdf', caption: msgText };
         }
         
-        // Add Button fallbacks as text
+        // Add Button fallbacks as a prominent Text Card (Since real buttons cause bans)
         if (templateData.buttons && templateData.buttons.length > 0) {
-            let btnText = "\n\n";
+            let btnText = "\n\n━━━━━━━━━━━━━━━━━━━━\n";
             templateData.buttons.forEach(b => {
-                if (b.type === 'url') btnText += `🔗 ${b.text}: ${b.value}\n`;
-                else if (b.type === 'call') btnText += `📞 ${b.text}: ${b.value}\n`;
-                else btnText += `▶️ ${b.text}\n`;
+                if (b.type === 'url') {
+                    btnText += `🌐 *${b.text.toUpperCase()}*\n👉 ${b.value}\n\n`;
+                } else if (b.type === 'call') {
+                    btnText += `📞 *${b.text.toUpperCase()}*\n👉 ${b.value}\n\n`;
+                } else {
+                    btnText += `▶️ *${b.text.toUpperCase()}*\n\n`;
+                }
             });
+            btnText = btnText.trim() + "\n━━━━━━━━━━━━━━━━━━━━";
+            
             if (payload.text) payload.text += btnText;
             if (payload.caption) payload.caption += btnText;
         }
